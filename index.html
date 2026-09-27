@@ -1,0 +1,2226 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pol-Mil Crisis Commander 2026: G4 Wargame</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --background: #090d16;
+      --foreground: #f8fafc;
+      --card: #111827;
+      --card-foreground: #f8fafc;
+      --border: #1e293b;
+      --muted: #1e293b;
+      --muted-foreground: #94a3b8;
+      --secondary: #1e293b;
+      --secondary-foreground: #f8fafc;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #090d16;
+        --foreground: #f8fafc;
+        --card: #111827;
+        --card-foreground: #f8fafc;
+        --border: #1e293b;
+        --muted: #1e293b;
+        --muted-foreground: #94a3b8;
+        --secondary: #1e293b;
+        --secondary-foreground: #f8fafc;
+      }
+    }
+    /* Modern Tactical Command Center Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    .transition-all-300 { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .pulse-danger { animation: pulse 2s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+      @keyframes radar-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .animate-radar {
+      animation: radar-spin 12s linear infinite;
+    }
+    .seat-active-ring {
+      box-shadow: 0 0 25px rgba(34, 211, 238, 0.45) !important;
+      border-color: #22d3ee !important;
+    }
+      @keyframes radar-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .animate-radar {
+      animation: radar-spin 12s linear infinite;
+    }
+    .seat-active-ring {
+      box-shadow: 0 0 20px rgba(34, 211, 238, 0.5) !important;
+      border-color: #22d3ee !important;
+    }
+    /* Custom compact scrollbar for internal containers */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.8);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.9);
+    }
+  </style>
+</head>
+
+
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased min-h-screen lg:h-screen lg:max-h-screen lg:overflow-hidden p-2 md:p-3 flex flex-col">
+
+  <div class="w-full max-w-[1680px] mx-auto flex-1 min-h-0 flex flex-col gap-2">
+    
+    <!-- Top Command Header (Compact: h-10) -->
+    <header class="bg-[var(--card)] border border-[var(--border)] rounded-xl px-4 py-2 shadow-xs flex items-center justify-between gap-3 shrink-0 h-10">
+      <div class="flex items-center gap-2.5">
+        <span class="text-xl">⚔️</span>
+        <h1 class="text-sm md:text-base font-bold tracking-tight text-[var(--foreground)]">
+          POL-MIL CRISIS COMMANDER 2026
+        </h1>
+        <span class="hidden md:inline text-[11px] text-[var(--muted-foreground)]">· 4대 정상 AI 페르소나 탑재 실시간 다자간 정치·군사 위기 시뮬레이터</span>
+      </div>
+      <div class="flex items-center gap-2.5">
+        <span class="text-[11px] text-[var(--muted-foreground)] hidden sm:inline">엔진 v6.2</span>
+        <button onclick="resetGame()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:opacity-80 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs">
+          <span>🔄</span> 리셋
+        </button>
+      </div>
+    </header>
+
+    <!-- 7:3 Strategic Arena Grid (Main Screen: 7/10 · 70% | Auxiliary Screen: 3/10 · 30%) -->
+    <div class="grid grid-cols-1 lg:grid-cols-10 gap-2.5 flex-1 min-h-0 items-stretch">
+
+      <!-- ======================================================== -->
+      <!-- [메인화면] Main Command Center (70% 너비)                  -->
+      <!-- 상단 50%: 라운드 테이블 | 하단 50%: 시나리오 + 고가시성 결단턴 -->
+      <!-- ======================================================== -->
+      <div class="lg:col-span-7 flex flex-col gap-2 min-h-0 h-full">
+
+        <!-- 1. 🏛️ G4 Diplomatic War Room Round Table (Top 50% Height: flex-1 min-h-0) -->
+        <div class="relative bg-slate-900/90 border border-slate-700/80 rounded-2xl p-3 shadow-xl overflow-hidden backdrop-blur-md flex-1 min-h-0 flex flex-col justify-between">
+          
+          <!-- Crisis Scenario Backdrop Image (Dynamic Background Sync) -->
+          <div id="table-scenario-bg" class="absolute inset-0 bg-cover bg-center transition-all duration-700 pointer-events-none opacity-25 scale-105" style="background-image: url('assets/scen_dprk_strike.jpg');"></div>
+          
+          <!-- Dark Tint Vignette & Ambient Radial Glow -->
+          <div class="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/70 to-slate-950/90 pointer-events-none"></div>
+          <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-950/30 via-transparent to-slate-950/80 pointer-events-none"></div>
+          
+          <!-- Concentric SVG Radar Rings & 45° Tactical Reticles -->
+          <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-20" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50%" cy="50%" r="22%" fill="none" stroke="#38bdf8" stroke-width="1" stroke-dasharray="3 3" />
+            <circle cx="50%" cy="50%" r="42%" fill="none" stroke="#38bdf8" stroke-width="1" />
+            <!-- Cardinal Guidelines (Subtle) -->
+            <line x1="50%" y1="5%" x2="50%" y2="95%" stroke="#38bdf8" stroke-width="0.5" stroke-dasharray="2 6"/>
+            <line x1="5%" y1="50%" x2="95%" y2="50%" stroke="#38bdf8" stroke-width="0.5" stroke-dasharray="2 6"/>
+            <!-- 45° Diagonal Tactical Crosshairs pointing to the 4 country stations -->
+            <line x1="12%" y1="12%" x2="88%" y2="88%" stroke="#38bdf8" stroke-width="1" stroke-dasharray="3 3"/>
+            <line x1="12%" y1="88%" x2="88%" y2="12%" stroke="#38bdf8" stroke-width="1" stroke-dasharray="3 3"/>
+          </svg>
+
+          <!-- Table Header / Title Bar -->
+          <div class="relative z-10 flex items-center justify-between pb-1.5 border-b border-slate-800 text-xs shrink-0">
+            <div class="flex items-center gap-2">
+              <span class="text-sm">🏛️</span>
+              <h2 class="font-extrabold text-xs md:text-sm text-white tracking-wide">
+                G4 정상 외교안보 라운드 테이블
+              </h2>
+            </div>
+          </div>
+
+          <!-- Round Table Seat Configuration (45° Diagonal Tactical Array) -->
+          <div class="relative z-10 flex flex-col justify-between flex-1 py-1 sm:py-2 min-h-0">
+            
+            <!-- Top Row (45° Diagonal: NW 315° & NE 45°) -->
+            <div class="w-full max-w-[760px] mx-auto flex items-center justify-between px-4 sm:px-8 pt-1.5 sm:pt-2.5">
+              <!-- NW (315°): 🇷🇺 Russia -->
+              <button type="button" id="seat-ru" onclick="inspectCountry('ru')" class="seat-station flex items-center justify-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-rose-500/70 bg-slate-950/90 hover:border-rose-400 hover:shadow-[0_0_15px_rgba(244,63,94,0.35)] transition-all cursor-pointer group shadow-sm min-w-[110px] sm:min-w-[130px] max-w-[160px]">
+                <img src="assets/flag_ru.svg" class="w-5 h-3.5 sm:w-6 sm:h-4 object-cover rounded-2xs border border-slate-700 shadow-2xs shrink-0" alt="러시아">
+                <span class="font-extrabold text-xs sm:text-sm text-white group-hover:text-rose-300">러시아</span>
+                <span id="table-quote-ru" class="hidden"></span>
+              </button>
+
+              <!-- NE (45°): 🇨🇳 China -->
+              <button type="button" id="seat-cn" onclick="inspectCountry('cn')" class="seat-station flex items-center justify-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-amber-500/70 bg-slate-950/90 hover:border-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.35)] transition-all cursor-pointer group shadow-sm min-w-[110px] sm:min-w-[130px] max-w-[160px]">
+                <img src="assets/flag_cn.svg" class="w-5 h-3.5 sm:w-6 sm:h-4 object-cover rounded-2xs border border-slate-700 shadow-2xs shrink-0" alt="중국">
+                <span class="font-extrabold text-xs sm:text-sm text-white group-hover:text-amber-300">중국</span>
+                <span id="table-quote-cn" class="hidden"></span>
+              </button>
+            </div>
+
+            <!-- Middle Row: Center Radar Hub (Spacious Tactical Core: Zero Side Interference) -->
+            <div class="w-full flex items-center justify-center my-auto py-1">
+              <div class="w-44 h-44 sm:w-52 sm:h-52 md:w-58 md:h-58 rounded-full bg-slate-950/95 border-2 border-slate-600 shadow-[0_0_40px_rgba(0,0,0,0.95)] flex flex-col items-center justify-center p-3 sm:p-4 text-center relative shrink-0">
+                <div class="absolute inset-0 rounded-full border border-cyan-500/25 animate-ping pointer-events-none"></div>
+                <div class="absolute inset-2 rounded-full border border-slate-800/80 pointer-events-none"></div>
+                
+                <span id="table-round-badge" class="px-2.5 py-0.5 rounded-full text-[9px] md:text-[10px] font-mono font-extrabold bg-red-950 text-red-400 border border-red-800 shadow-xs mb-1.5 shrink-0 tracking-wider">
+                  ROUND 1 / 3
+                </span>
+                
+                <h3 id="table-scenario-title" class="font-black text-xs sm:text-sm md:text-[15px] text-white leading-snug px-2 text-center break-keep drop-shadow-md max-w-[210px]">
+                  북한 반도체 클러스터 하이브리드 타격 및 북·러 조약 위기
+                </h3>
+
+                <!-- Hidden for verify_arena.py & JS telemetry compatibility -->
+                <span id="table-escalation-text" class="hidden"></span>
+              </div>
+            </div>
+
+            <!-- Bottom Row (45° Diagonal: SW 225° & SE 135°) -->
+            <div class="w-full max-w-[760px] mx-auto flex items-center justify-between px-4 sm:px-8 pb-1.5 sm:pb-2.5">
+              <!-- SW (225°): 🇺🇸 US -->
+              <button type="button" id="seat-us" onclick="inspectCountry('us')" class="seat-station flex items-center justify-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-blue-500/70 bg-slate-950/90 hover:border-blue-400 hover:shadow-[0_0_15px_rgba(59,130,246,0.35)] transition-all cursor-pointer group shadow-sm min-w-[110px] sm:min-w-[130px] max-w-[160px]">
+                <img src="assets/flag_us.svg" class="w-5 h-3.5 sm:w-6 sm:h-4 object-cover rounded-2xs border border-slate-700 shadow-2xs shrink-0" alt="미국">
+                <span class="font-extrabold text-xs sm:text-sm text-white group-hover:text-blue-300">미국</span>
+                <span id="table-quote-us" class="hidden"></span>
+              </button>
+
+              <!-- SE (135°): 🇰🇷 South Korea (Player Commander Seat) -->
+              <button type="button" id="seat-kr" onclick="inspectCountry('kr')" class="seat-station flex items-center justify-center gap-2.5 px-4 py-1.5 sm:px-5 sm:py-2 rounded-xl border-2 border-indigo-500 bg-slate-950/95 hover:border-indigo-400 hover:shadow-[0_0_20px_rgba(99,102,241,0.45)] transition-all cursor-pointer group shadow-md ring-1 ring-indigo-500/50 min-w-[110px] sm:min-w-[130px] max-w-[170px]">
+                <img src="assets/flag_kr.svg" class="w-5.5 h-4 sm:w-6.5 sm:h-4.5 object-cover rounded-2xs border border-slate-700 shadow-2xs shrink-0" alt="한국">
+                <span class="font-extrabold text-xs sm:text-sm text-white group-hover:text-indigo-300">대한민국</span>
+                <span id="table-quote-kr" class="hidden"></span>
+              </button>
+            </div>
+
+          </div>
+                  <!-- GAME OVER Table Layover (Strategic Ending Assessment Overlay) -->
+          <div id="ending-card" class="hidden absolute inset-0 z-30 bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-center p-4 sm:p-6 text-center animate-fade-in transition-all duration-300">
+            
+            <div id="ending-inner-box" class="w-full max-w-xl bg-slate-900/95 border-2 border-slate-700 rounded-2xl p-4 sm:p-5 shadow-[0_0_50px_rgba(0,0,0,0.9)] relative overflow-hidden flex flex-col items-center gap-2.5">
+              
+              <!-- Ambient Top Accent Line -->
+              <div id="ending-glow-bar" class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+
+              <!-- Header Tag -->
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono font-extrabold uppercase tracking-widest bg-slate-800 text-slate-300 border border-slate-600 shadow-xs">
+                  GAME OVER · 최종 전략 결말 평가
+                </span>
+              </div>
+
+              <!-- Icon & Title -->
+              <div class="flex flex-col items-center">
+                <span id="ending-icon" class="text-4xl sm:text-5xl drop-shadow-[0_0_15px_rgba(255,255,255,0.4)] mb-1">🕊️</span>
+                <h3 id="ending-title" class="font-black text-sm sm:text-base md:text-lg text-white tracking-wide leading-snug drop-shadow-md">
+                  4자 정상 간 '그랜드 빅딜' 극적 타결 · Grand Bargain
+                </h3>
+              </div>
+
+              <!-- Narrative Description -->
+              <p id="ending-desc" class="text-[11px] sm:text-xs text-slate-200 leading-relaxed bg-slate-950/80 border border-slate-800/90 rounded-xl px-3.5 py-2.5 max-w-lg break-keep shadow-inner text-center">
+                치열한 대치 속에서 대한민국의 정교한 국익 실용외교가 결실을 맺었습니다. 한반도 비핵화와 평화 공존을 위한 역사적 4자 공동 선언이 성안되었습니다.
+              </p>
+
+              <!-- Final State Telemetry Summary Pills -->
+              <div class="flex flex-wrap items-center justify-center gap-2 text-[10px] sm:text-[11px] font-mono py-0.5">
+                <div class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 flex items-center gap-1.5 text-slate-300 shadow-xs">
+                  <span>🚨 확전:</span>
+                  <span id="final-esc-val" class="font-extrabold text-red-400">35%</span>
+                </div>
+                <div class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 flex items-center gap-1.5 text-slate-300 shadow-xs">
+                  <span>🛡️ 안보:</span>
+                  <span id="final-sec-val" class="font-extrabold text-blue-400">60</span>
+                </div>
+                <div class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 flex items-center gap-1.5 text-slate-300 shadow-xs">
+                  <span>📈 경제:</span>
+                  <span id="final-eco-val" class="font-extrabold text-emerald-400">65</span>
+                </div>
+                <div class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 flex items-center gap-1.5 text-slate-300 shadow-xs">
+                  <span>🤝 동맹:</span>
+                  <span id="final-all-val" class="font-extrabold text-purple-400">70</span>
+                </div>
+              </div>
+
+              <!-- Action Controls -->
+              <div class="flex items-center justify-center w-full max-w-xs pt-1">
+                <button type="button" onclick="resetGame()" class="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5">
+                  <span>🔄</span> 새 시나리오 작전 개시
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+</div>
+
+        <!-- 2. 📋 위기 시나리오 가로 바 + 🎮 사령관 결단 콘솔 (Bottom 50% Height: flex-1 min-h-0 flex flex-col gap-2) -->
+        <div class="flex-1 min-h-0 flex flex-col gap-2 justify-between">
+          
+          <!-- 위기 시나리오 가로 선택 바 (Compact: ~58px) -->
+          <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl px-3 py-1.5 shadow-sm shrink-0">
+            <div class="flex items-center justify-between text-xs pb-1">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-[11px] text-slate-200 flex items-center gap-1">
+                  <span>📋</span> 위기 시나리오 선택
+                </span>
+                <span class="text-[10px] text-slate-400 hidden sm:inline">카드를 클릭하면 보조화면에서 상세 브리핑이 전환됩니다</span>
+              </div>
+              <div id="round-indicator" class="text-[10px] font-semibold text-red-400 flex items-center gap-1 font-mono">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
+                <span>ROUND 1 / 3</span>
+              </div>
+            </div>
+
+            <!-- Scenario Card Grid (4 Horizontal Cards) -->
+            <div class="grid grid-cols-4 gap-2">
+              <!-- Card 0 -->
+              <div id="scen-card-0" onclick="selectScenario(0)" class="relative rounded-lg text-left transition-colors duration-200 group cursor-pointer">
+                <div class="relative w-full h-[40px] rounded-lg overflow-hidden px-2 flex items-center justify-center text-center">
+                  <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style="background-image: url('assets/scen_dprk_strike.jpg');"></div>
+                  <div class="absolute inset-0 bg-slate-950/75 group-hover:bg-slate-950/60 transition-colors"></div>
+                  <div class="card-border-layer absolute inset-0 rounded-lg border-2 border-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.25)] pointer-events-none"></div>
+                  <h4 class="relative z-10 font-bold text-[10px] sm:text-[11px] text-white leading-tight break-keep truncate">
+                    북한 반도체 타격 · 북러조약
+                  </h4>
+                </div>
+              </div>
+              <!-- Card 1 -->
+              <div id="scen-card-1" onclick="selectScenario(1)" class="relative rounded-lg text-left transition-colors duration-200 group cursor-pointer">
+                <div class="relative w-full h-[40px] rounded-lg overflow-hidden px-2 flex items-center justify-center text-center">
+                  <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style="background-image: url('assets/scen_taiwan_blockade.jpg');"></div>
+                  <div class="absolute inset-0 bg-slate-950/75 group-hover:bg-slate-950/60 transition-colors"></div>
+                  <div class="card-border-layer absolute inset-0 rounded-lg border-2 border-white/15 pointer-events-none"></div>
+                  <h4 class="relative z-10 font-bold text-[10px] sm:text-[11px] text-white leading-tight break-keep truncate">
+                    대만 해협 봉쇄 · 주한미군 차출
+                  </h4>
+                </div>
+              </div>
+              <!-- Card 2 -->
+              <div id="scen-card-2" onclick="selectScenario(2)" class="relative rounded-lg text-left transition-colors duration-200 group cursor-pointer">
+                <div class="relative w-full h-[40px] rounded-lg overflow-hidden px-2 flex items-center justify-center text-center">
+                  <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style="background-image: url('assets/scen_west_sea_clash.jpg');"></div>
+                  <div class="absolute inset-0 bg-slate-950/75 group-hover:bg-slate-950/60 transition-colors"></div>
+                  <div class="card-border-layer absolute inset-0 rounded-lg border-2 border-white/15 pointer-events-none"></div>
+                  <h4 class="relative z-10 font-bold text-[10px] sm:text-[11px] text-white leading-tight break-keep truncate">
+                    서해 NLL 충돌 · 동북아 관세전
+                  </h4>
+                </div>
+              </div>
+              <!-- Card 3 -->
+              <div id="scen-card-3" onclick="selectScenario(3)" class="relative rounded-lg text-left transition-colors duration-200 group cursor-pointer">
+                <div class="relative w-full h-[40px] rounded-lg overflow-hidden px-2 flex items-center justify-center text-center">
+                  <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style="background-image: url('assets/scen_custom_warroom.jpg');"></div>
+                  <div class="absolute inset-0 bg-slate-950/75 group-hover:bg-slate-950/60 transition-colors"></div>
+                  <div class="card-border-layer absolute inset-0 rounded-lg border-2 border-white/15 pointer-events-none"></div>
+                  <h4 class="relative z-10 font-bold text-[10px] sm:text-[11px] text-white leading-tight break-keep truncate">
+                    사용자 정의 자유 시나리오
+                  </h4>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 대한민국 사령관 결단 콘솔 (고가시성 3-컬럼 카드 그리드 레이아웃: flex-1 min-h-0) -->
+          <!-- 대한민국 사령관 결단 콘솔 (핵심 중요 정보 중심 고가시성 레이아웃: flex-1 min-h-0) -->
+          <div id="decision-box" class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-2.5 sm:p-3 shadow-sm flex flex-col justify-between flex-1 min-h-0 overflow-hidden space-y-1.5">
+            
+            <!-- Turn Header + Sleek Inline Step Tracker -->
+            <div class="flex items-center justify-between pb-1.5 border-b border-slate-800/80 shrink-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm">🎯</span>
+                <h3 class="font-bold text-xs md:text-sm text-white flex items-center gap-1.5">
+                  <img src="assets/flag_kr.svg" class="w-4.5 h-3 object-cover rounded-2xs border border-slate-700 shadow-2xs inline-block" alt="대한민국 국기"> 대한민국 결단 턴
+                </h3>
+                <span id="decision-turn-badge" class="px-2 py-0.2 rounded-full text-[10px] font-bold font-mono bg-blue-950/80 text-blue-200 border border-blue-700 flex items-center gap-1">
+                  <span id="decision-turn-ping-dot" class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                  <span id="decision-turn-step-text">ROUND 1 · 초동 결단</span>
+                </span>
+              </div>
+              
+              <!-- 3-Phase Step Visual Tracker (Sleek Inline Breadcrumb: Zero Height Clutter) -->
+              <div id="decision-step-tracker" class="flex items-center gap-1 text-[10px] font-mono">
+                <!-- Dynamically populated in renderOptions() -->
+              </div>
+              <span id="decision-sub-guide" class="hidden"></span>
+            </div>
+
+            <!-- Dynamic Tactical Status Strip (Compact 1-Line Bulletin: ~22px) -->
+            <div id="round-intel-brief" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 shadow-xs shrink-0 flex items-center justify-between text-[10px]">
+              <!-- Dynamically populated in renderOptions() -->
+            </div>
+
+            <!-- Strategic Options Container: 고가시성 3-컬럼 사이드 바이 사이드 그리드 (3 Columns Grid) -->
+            <div id="options-container" class="grid grid-cols-3 gap-2 flex-1 min-h-0 items-stretch h-full w-full">
+              <!-- Dynamically populated option cards in 3 columns -->
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- [보조화면] Auxiliary Intel Sidecar (30% 너비)               -->
+      <!-- 7:3 비율에 맞춰 30% 폭 확보 (국가 인텔 / 브리핑 / 전황&로그) -->
+      <!-- ======================================================== -->
+      <div class="lg:col-span-3 flex flex-col h-full min-h-0 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-3 shadow-sm space-y-2 overflow-hidden">
+        
+        <!-- Sidecar Header -->
+        <div class="flex items-center justify-between pb-1.5 border-b border-slate-800 shrink-0">
+          <div class="flex items-center gap-1.5">
+            <span class="text-sm">🛰️</span>
+            <h3 class="font-bold text-xs text-white uppercase tracking-wider">전술 인텔 사이드카 (30%)</h3>
+          </div>
+          <span id="sub-active-tab-tag" class="text-[10px] px-2 py-0.2 rounded font-mono font-bold bg-blue-950 text-blue-300 border border-blue-800">국가 인텔</span>
+        </div>
+
+        <!-- 3 Context Tabs -->
+        <div class="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[11px] font-bold shrink-0">
+          <button type="button" id="tab-btn-country" onclick="switchSubTab('country')" class="py-1 px-1 rounded-lg text-center transition-all bg-blue-600 text-white shadow-xs cursor-pointer">
+            🏛️ 국가 인텔
+          </button>
+          <button type="button" id="tab-btn-scenario" onclick="switchSubTab('scenario')" class="py-1 px-1 rounded-lg text-center transition-all text-slate-400 hover:text-white cursor-pointer">
+            📜 브리핑
+          </button>
+          <button type="button" id="tab-btn-telemetry" onclick="switchSubTab('telemetry')" class="py-1 px-1 rounded-lg text-center transition-all text-slate-400 hover:text-white cursor-pointer">
+            📊 전황·로그
+          </button>
+        </div>
+
+        <!-- Scrollable Active Panel Area -->
+        <div class="flex-1 min-h-0 pr-0.5 space-y-2 flex flex-col overflow-hidden">
+
+          <!-- Panel 1: 🏛️ National Intelligence Panel -->
+          <div id="sub-panel-country" class="space-y-2 pt-0.5 overflow-y-auto flex-1 min-h-0">
+            <!-- Quick Country Switcher Pills -->
+            <div class="flex items-center justify-between gap-1 text-[10px] font-mono">
+              <button type="button" onclick="inspectCountry('kr')" class="flex-1 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold flex items-center justify-center gap-1 cursor-pointer">
+                <span>🇰🇷</span> 한국
+              </button>
+              <button type="button" onclick="inspectCountry('us')" class="flex-1 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold flex items-center justify-center gap-1 cursor-pointer">
+                <span>🇺🇸</span> 미국
+              </button>
+              <button type="button" onclick="inspectCountry('cn')" class="flex-1 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold flex items-center justify-center gap-1 cursor-pointer">
+                <span>🇨🇳</span> 중국
+              </button>
+              <button type="button" onclick="inspectCountry('ru')" class="flex-1 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold flex items-center justify-center gap-1 cursor-pointer">
+                <span>🇷🇺</span> 러시아
+              </button>
+            </div>
+
+            <!-- Dynamic Country Dossier Container (Populated by inspectCountry) -->
+            <div id="sub-country-content" class="space-y-2">
+              <!-- Dynamically populated in inspectCountry() -->
+            </div>
+          </div>
+
+          <!-- Panel 2: 📜 Scenario Briefing Panel -->
+          <div id="sub-panel-scenario" class="space-y-2 pt-0.5 overflow-y-auto flex-1 min-h-0 hidden">
+            
+            <!-- Active Preset Scenario Box -->
+            <div id="active-scenario-box" class="rounded-xl p-3 bg-slate-900 border-2 border-blue-500 shadow-md space-y-2 transition-all duration-300">
+              <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                <div id="connector-badge" class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-blue-950 text-blue-300 border border-blue-700 flex items-center gap-1.5 shadow-sm">
+                  <span id="connector-ping-dot" class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping"></span>
+                  <span id="connector-card-label">[연동 활성화]</span>
+                </div>
+                <span id="scenario-status-tag" class="text-[9px] px-1.5 py-0.5 rounded-full font-mono font-bold bg-red-950 text-red-300 border border-red-700">
+                  🚨 위기 1급 경보
+                </span>
+              </div>
+
+              <div>
+                <h4 id="scenario-title" class="font-bold text-xs text-white flex items-center gap-1.5">
+                  <span id="scenario-title-icon" class="text-sm">💥</span>
+                  <span id="scenario-title-text" class="leading-tight">북한 반도체 클러스터 타격</span>
+                </h4>
+                <div class="mt-1 text-[10px] text-slate-400 font-mono font-bold">
+                  초기 확전도: <span id="scenario-esc-disp" class="text-red-400 font-extrabold text-xs">65%</span>
+                </div>
+              </div>
+
+              <div class="rounded-lg bg-slate-950/90 border border-slate-800 p-2.5 max-h-[220px] overflow-y-auto">
+                <p id="scenario-desc" class="text-xs text-slate-200 leading-relaxed font-medium">
+                  미군과 연합군이 평북/자강도 산악 지하에 은닉된 북한의 특수 군용 반도체 클러스터를 사이버·EMP·스텔스 벙커버스터로 초토화했습니다.
+                </p>
+              </div>
+
+              <button id="reopen-custom-btn" type="button" onclick="openCustomConfig()" class="hidden w-full py-1 text-xs rounded-lg bg-indigo-950 text-indigo-300 border border-indigo-700 hover:bg-indigo-900 font-bold transition-colors cursor-pointer text-center">
+                ✏️ 시나리오 재설정
+              </button>
+            </div>
+
+            <!-- Custom Scenario Configuration Box -->
+            <div id="custom-scenario-panel" class="hidden rounded-xl p-3 bg-slate-900 border-2 border-indigo-500 shadow-md space-y-2 transition-all duration-300">
+              <div class="flex items-center justify-between pb-1 border-b border-slate-800">
+                <div class="px-2 py-0.2 rounded-lg text-[10px] font-mono font-bold bg-indigo-950 text-indigo-300 border border-indigo-700 flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping"></span>
+                  <span>[커스텀 연동]</span>
+                </div>
+              </div>
+
+              <!-- Quick Presets -->
+              <div class="flex gap-1 text-[10px] font-bold">
+                <button type="button" onclick="loadCustomPreset(1)" class="flex-1 py-1 rounded bg-slate-800 hover:bg-indigo-900/60 text-slate-200 border border-slate-700 cursor-pointer">독도 대치</button>
+                <button type="button" onclick="loadCustomPreset(2)" class="flex-1 py-1 rounded bg-slate-800 hover:bg-indigo-900/60 text-slate-200 border border-slate-700 cursor-pointer">희토류 금수</button>
+              </div>
+
+              <div class="space-y-1.5 text-xs">
+                <div>
+                  <label class="text-[10px] font-bold text-slate-300">시나리오 명:</label>
+                  <input id="custom-input-title" type="text" class="w-full mt-0.5 h-6 px-2 text-xs rounded border border-slate-700 bg-slate-950 text-slate-100 font-semibold focus:outline-none focus:border-indigo-500" value="동해 공해상 제3국 함대 진입 및 해상 대치 위기">
+                </div>
+                <div>
+                  <label class="text-[10px] font-bold text-slate-300">상황 브리핑:</label>
+                  <textarea id="custom-input-desc" rows="3" class="w-full mt-0.5 p-1.5 text-xs rounded border border-slate-700 bg-slate-950 text-slate-100 font-semibold focus:outline-none focus:border-indigo-500 leading-relaxed resize-none">동해 해역에서 제3국 잠수함 전단과 대규모 해상 훈련이 전개되어 대한민국 관할 수역의 안보가 위협받고 있습니다. 트럼프 행정부는 연합 해상 차단 훈련 참가를 강력 요구하며, 중·러는 비례적 맞대응을 경고하고 있습니다.</textarea>
+                </div>
+                <div>
+                  <div class="flex justify-between items-center text-[10px] font-bold text-slate-300">
+                    <span>초기 확전도:</span>
+                    <span id="custom-esc-val" class="font-mono text-indigo-400">65%</span>
+                  </div>
+                  <input id="custom-input-esc" type="range" min="30" max="90" value="65" oninput="document.getElementById('custom-esc-val').innerText = this.value + '%'" class="w-full mt-1 accent-indigo-500 cursor-pointer">
+                </div>
+              </div>
+
+              <button type="button" onclick="applyCustomScenario()" class="w-full py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 transition-colors shadow-md shadow-indigo-600/30 cursor-pointer">
+                🚀 시나리오 적용 및 시작
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Panel 3: 📊 Battlefield Telemetry & 4-Country Operation Logs -->
+          <div id="sub-panel-telemetry" class="space-y-2 pt-0.5 flex-1 min-h-0 flex flex-col hidden">
+            
+            <!-- Escalation Gauge -->
+            <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1 shadow-xs shrink-0">
+              <div class="flex justify-between text-xs font-semibold">
+                <span class="flex items-center gap-1.5 text-slate-200">
+                  <span id="escalation-dot" class="w-2 h-2 rounded-full bg-red-500"></span>
+                  위기 확전 위험도
+                </span>
+                <span id="escalation-val" class="font-mono text-red-400 text-xs font-bold">65%</span>
+              </div>
+              <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                <div id="escalation-bar" class="bg-red-500 h-full transition-all duration-300" style="width: 65%;"></div>
+              </div>
+              <p id="escalation-status" class="text-[10px] text-slate-400 leading-tight">
+                ⚠️ 북·러 조약 발동 위협으로 긴장이 최고조에 달해 있습니다.
+              </p>
+            </div>
+
+            <!-- 3 Mini Metric Gauges -->
+            <div class="grid grid-cols-3 gap-1.5 text-xs shrink-0">
+              <div class="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-center">
+                <div class="text-[10px] text-slate-400">안보도</div>
+                <div id="security-val" class="font-mono text-blue-400 font-bold text-xs">60/100</div>
+                <div class="w-full bg-slate-900 rounded-full h-1 overflow-hidden mt-1">
+                  <div id="security-bar" class="bg-blue-500 h-full" style="width: 60%;"></div>
+                </div>
+              </div>
+              <div class="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-center">
+                <div class="text-[10px] text-slate-400">경제지수</div>
+                <div id="economy-val" class="font-mono text-emerald-400 font-bold text-xs">65/100</div>
+                <div class="w-full bg-slate-900 rounded-full h-1 overflow-hidden mt-1">
+                  <div id="economy-bar" class="bg-emerald-500 h-full" style="width: 65%;"></div>
+                </div>
+              </div>
+              <div class="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-center">
+                <div class="text-[10px] text-slate-400">한미동맹</div>
+                <div id="alliance-val" class="font-mono text-indigo-400 font-bold text-xs">70/100</div>
+                <div class="w-full bg-slate-900 rounded-full h-1 overflow-hidden mt-1">
+                  <div id="alliance-bar" class="bg-indigo-500 h-full" style="width: 70%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Doctrine / Intensity Continuity -->
+            <div class="p-1.5 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center text-[10px] shrink-0">
+              <div class="text-slate-400">
+                기조: <span id="current-doctrine-label" class="font-semibold text-blue-400">대기 중</span>
+              </div>
+              <div class="text-slate-400">
+                반응: <span id="intensity-level-label" class="font-semibold text-amber-400">1차 반응</span>
+              </div>
+            </div>
+
+            <!-- Real-Time 4-Country Cross Action Log (Extends to screen bottom) -->
+            <div class="border-t border-slate-800 pt-2 space-y-1.5 flex-1 min-h-0 flex flex-col">
+              <div class="flex items-center justify-between shrink-0">
+                <h4 class="font-bold text-xs text-white flex items-center gap-1">
+                  <span>📜</span> 4국 교차 작전 로그
+                </h4>
+                <span id="log-count" class="text-[10px] text-slate-400 font-mono">0건</span>
+              </div>
+              <div id="turn-logs" class="space-y-2 flex-1 min-h-0 overflow-y-auto pr-0.5">
+                <div class="text-center py-6 text-[11px] text-slate-400">
+                  전략 결단을 내리면 4개국의 실시간 발언과 군사 조치가 여기에 기록됩니다.
+                </div>
+              </div>
+            </div>
+
+
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <script>
+const scenarios = [
+      {
+        id: "dprk_strike",
+        title: "북한 반도체 클러스터 하이브리드 타격 및 북·러 조약 위기",
+        desc: "미군과 연합군이 평북/자강도 산악 지하에 은닉된 북한의 특수 군용 반도체 클러스터를 사이버·EMP·스텔스 벙커버스터로 초토화했습니다. 북한은 '공화국 침략'을 선언하며 전술핵 반격과 북·러 포괄적 전략적 동반자 조약 제4조(군사원조 의무)의 즉각 발동을 요구하고 있습니다.",
+        initialEscalation: 65,
+        options: [
+          {
+            title: "한미 연합 방위태세 격상 및 킬체인 가동",
+            desc: "미 전략자산 전개 수용 · 도발 징후 시 원점 타격 선언",
+            doctrine: "한미동맹 중심 강경 억제",
+            doctrineKey: "deterrence",
+            escDelta: +12, secDelta: +8, econDelta: -10, allDelta: +15,
+            rounds: {
+              1: {
+                title: "한미 연합 방위태세 격상 및 킬체인 가동",
+                desc: "미 전략자산 전개 수용 · 도발 징후 시 원점 타격 선언"
+              },
+              2: {
+                title: "B-21 연계 항모전단 합동 진입 및 차단망 구축",
+                desc: "서·동해 해상 차단망 전개 · 중·러 군사원조 압박 분쇄"
+              },
+              3: {
+                title: "최후통첩: 전략핵잠(SSBN) 진입 및 도발 의지 제압",
+                desc: "미 2차 타격 자산 총동원 · 적의 핵 위협 완전 무력화"
+              }
+            },
+            tiers: {
+              t1: {
+                trump: { text: "완벽한 결정이다! 한국은 미국의 위대한 동맹이며, 김정은이 오판하면 그 날로 끝장날 것이다.", action: "B-21 스텔스 폭격기 오산기지 긴급 전진 배치", redline: false, esc: +8 },
+                xi: { text: "한반도에 전략자산을 전개하여 중국의 전략 공간을 위협하는 일방적 모험주의를 결코 좌시하지 않겠다.", action: "북중 국경 지대 인민해방군 방어 1호 태세 격상", redline: true, esc: +10 },
+                putin: { text: "러시아는 북한과의 조약상 의무를 가볍게 여기지 않는다. 도발자들은 비대칭적 응징을 각오하라.", action: "극동 미사일 전력 및 태평양함대 비상 대기", redline: true, esc: +12 }
+              },
+              t2: {
+                trump: { text: "내 경고를 가볍게 들은 자들의 최후를 보게 될 것이다! 제7함대 항모 2개 전단을 즉각 원산 앞바다로 진입시켰고, 200% 보복 관세 행정명령에 서명했다. 협상은 없다!", action: "항모전단 2개 추가 투입 및 200% 보복 관세 발동", redline: false, esc: +14 },
+                xi: { text: "중국의 엄중한 경고를 무시하고 불장난을 지속한다면 감당할 수 없는 파멸적 대가를 치를 것이다. 서해 전 해역을 군사 통제구역으로 선포하고 핵심 광물 수출을 전면 통제한다!", action: "서해 전면 항행 금지구역 선포 및 희토류·갈륨 수출 전면 금수", redline: true, esc: +15 },
+                putin: { text: "서방과 그 추종자들의 무모한 도발이 한계를 넘었다. 북·러 조약 제4조에 의거해 북한에 전면적 첨단 군사 원조를 즉시 개시했다. 비대칭적 보복은 이제 시작이다!", action: "북·러 조약 제4조 군사원조 발동 및 첨단 방공망·미사일 기술 긴급 이양", redline: true, esc: +16 }
+              },
+              t3: {
+                trump: { text: "이제 남은 것은 완전한 궤멸뿐이다. 킬체인 동시 타격과 참수 작전 승인에 최종 서명했다. 푸틴과 시진핑도 끼어들 생각 마라, 덤비면 전부 날려버리겠다!", action: "핵추진 전략잠수함(SSBN) 한반도 영해 진입 및 전면 타격 태세 돌입", redline: false, esc: +18 },
+                xi: { text: "국가 주권과 영토 완정은 타협의 대상이 아니다. 인민해방군 로켓군과 북부전구에 최고 전시 동원령을 하달했다. 일선의 한 발의 총성도 즉각적인 전면 반격으로 이어질 것이다!", action: "인민해방군 1급 전시동원령 발령 및 둥펑 극초음속 미사일 실전 전개", redline: true, esc: +20 },
+                putin: { text: "극동 관구의 모든 전술핵 전력이 임무 수행 준비를 마쳤다. 러시아의 안보를 위협하는 군사 행동에는 물리적 소멸 외에 다른 응답은 없을 것이다.", action: "태평양함대 전략핵잠 비상 출항 및 오레시니크 미사일 발사 준비 태세 완료", redline: true, esc: +20 }
+              }
+            }
+          },
+          {
+            title: "중·러 핫라인 가동 및 4자 긴급 중재안 발의",
+            desc: "베이징·모스크바 특사 급파 · 한반도 4자 회담 제안",
+            doctrine: "국익 실용외교 및 다자 평화 중재",
+            doctrineKey: "diplomacy",
+            escDelta: -15, secDelta: +4, econDelta: +10, allDelta: -5,
+            rounds: {
+              1: {
+                title: "중·러 핫라인 가동 및 4자 긴급 중재안 발의",
+                desc: "베이징·모스크바 특사 급파 · 한반도 4자 회담 제안"
+              },
+              2: {
+                title: "미 공습 중단 및 중·러 참전 보류 연계 4자 회담 성안",
+                desc: "추가 군사행동 동결 확약 · 4자 정상 빅딜 테이블 성사"
+              },
+              3: {
+                title: "한반도 4자 평화협정 서명 및 다자 안전보장 체제 완성",
+                desc: "비핵화-투자 빅딜 및 에너지·공급망 포괄 협정 서명"
+              }
+            },
+            tiers: {
+              t1: {
+                trump: { text: "이 대통령이 대화를 원한다면 지켜보겠다. 하지만 김정은이 딴소리하면 관세와 폭격이 다시 돌아올 것이다.", action: "추가 공습 일시 보류 및 시진핑·푸틴 전화 통화 타진", redline: false, esc: -8 },
+                xi: { text: "한반도 평화와 안정을 위한 한국 정부의 건설적 노력을 높이 평가하며, 대화 테이블에 응할 용의가 있다.", action: "외교 채널 통한 4자 실무 접촉 승인", redline: false, esc: -10 },
+                putin: { text: "우리는 외교적 해결을 배제하지 않는다. 단 미국의 군사적 도발 중단이 확약되어야 한다.", action: "북한 지도부에 전략적 인내 권고 메시지 타전", redline: false, esc: -6 }
+              },
+              t2: {
+                trump: { text: "좋다! 이 대통령의 담판 제안을 받아들여 시진핑, 푸틴에게 직통 전화를 걸었다. 역사적인 '4자 정상 빅딜 회담' 테이블을 즉시 차려라. 내가 직접 판을 흔들겠다!", action: "4자 긴급 정상회담 수락 및 상호 관세 유예 조치 검토", redline: false, esc: -14 },
+                xi: { text: "한국의 흔들림 없는 평화 중재 의지를 신뢰한다. 베이징 4자 평화안 초안을 공식 발의하며, 한중 간 통상 정상화와 공급망 안정을 위한 특급 우대 조치를 발표한다.", action: "베이징 4자 평화선언 로드맵 제안 및 한중 공급망 통상 전면 정상화", redline: false, esc: -16 },
+                putin: { text: "상황을 실질적으로 완화하려는 대한민국의 자주적 노력을 높이 산다. 극동 군사 훈련 강도를 즉각 축소하고, 남·북·러 삼각 에너지 협력 복원을 논의할 준비가 되었다.", action: "극동 미사일 경계 단계 하향 및 남·북·러 천연가스/철도 연결 실무단 구성", redline: false, esc: -12 }
+              },
+              t3: {
+                trump: { text: "이것이 바로 내가 원하던 세기의 딜이다! 북한 비핵화와 대규모 투자 패키지를 맞교환하는 평화 협정에 서명할 준비가 되었다. 역사상 가장 위대한 승리가 될 것이다!", action: "4자 평화협정 서명단 파견 및 동북아 경제협력 펀드 창설 선언", redline: false, esc: -20 },
+                xi: { text: "냉전적 진영 대결을 극복하고 아시아 운명공동체의 새로운 장이 열렸다. 다자간 불가침 협정과 대규모 동북아 물류 회랑 사업에 즉각 착수하겠다.", action: "다자간 상호불가침 협정 체결 및 유라시아 물류망 연결 합의", redline: false, esc: -20 },
+                putin: { text: "신뢰가 승리했다. 유라시아 대륙의 평화적 안보 구조가 확립되었으며, 러시아는 새로운 다극화 평화 질서의 보증인으로서 전면 협력할 것이다.", action: "4자 동북아 안전보장 공동선언 서명 및 극동 경제특구 한국 기업 전면 개방", redline: false, esc: -18 }
+              }
+            }
+          },
+          {
+            title: "전군 비상경계령 유지 및 독자적 상황 관리",
+            desc: "독자 방어 태세 유지 · 확전 경계 및 대북 통신선 복원 타진",
+            doctrine: "자주국방 및 신중한 상황 통제",
+            doctrineKey: "statusquo",
+            escDelta: -4, secDelta: +6, econDelta: +2, allDelta: -2,
+            rounds: {
+              1: {
+                title: "전군 비상경계령 유지 및 독자적 상황 관리",
+                desc: "독자 방어 태세 유지 · 확전 경계 및 대북 통신선 복원 타진"
+              },
+              2: {
+                title: "외세 개입 차단 선언 및 군사분계선 완충구역 유지",
+                desc: "주변국 군사 개입 선긋기 · 한반도 충돌 방지 완충 조치 독자 집행"
+              },
+              3: {
+                title: "국방 주권 자율성 선언 및 조건부 군사적 현상유지",
+                desc: "대리전 편입 거부 · 비군사적 자율성 선포 및 사태 동결"
+              }
+            },
+            tiers: {
+              t1: {
+                trump: { text: "한국이 독자적으로 하겠다면 존중한다. 하지만 미국의 안보 우산 비용을 더 지불해야 할 것이다.", action: "방위비 분담금 재협상 카드 공식 거론", redline: false, esc: -2 },
+                xi: { text: "한국이 진영 대결에 무모하게 가담하지 않는 것은 현명한 선택이다. 완충지대는 유지되어야 한다.", action: "서해 및 국경 감시 정찰 유지", redline: false, esc: -3 },
+                putin: { text: "상황을 예의주시하겠다. 우리의 조약상 행동은 서방의 다음 수순에 달려 있다.", action: "전략적 모호성 유지 및 정보 분석 지속", redline: false, esc: -2 }
+              },
+              t2: {
+                trump: { text: "미온적인 태도는 지속될 수 없다! 우리 편에 확실히 서지 않는다면 한국산 제품에 대해 예외 없는 관세를 부과할 수밖에 없다.", action: "한국산 전략 수출품 특별 관세 부과 법안 준비 지시", redline: false, esc: +2 },
+                xi: { text: "한국이 현상 유지를 꾀하더라도, 미군의 추가 배치를 묵인한다면 그 또한 공범이다. 명확한 중립적 보장을 요구한다.", action: "한국 인근 해역 전략 초계기 순찰 2배 증편", redline: false, esc: +1 },
+                putin: { text: "모호한 태도로는 거대한 폭풍을 피할 수 없다. 러시아는 자체적인 계산에 따라 국경 수비를 강화할 뿐이다.", action: "블라디보스토크 기지 방공 레이더 출력 최대 격상", redline: false, esc: +2 }
+              },
+              t3: {
+                trump: { text: "중립 놀음은 끝났다. 미국과의 혈맹을 증명하든지, 아니면 스스로를 지키든지 양자택일하라!", action: "주한미군 지위 협정 전면 재검토 착수", redline: false, esc: +5 },
+                xi: { text: "불확실성을 더 이상 인내하기 어렵다. 대한민국이 확실한 비군사적 입장을 천명하지 않는다면 경제적 상응 조치는 불가피하다.", action: "대한국 일부 통상 규제 강화 지침 하달", redline: false, esc: +4 },
+                putin: { text: "상황의 장기화는 누구에게도 이롭지 않다. 러시아는 북한과의 약속된 합동 군사 훈련을 예정대로 집행한다.", action: "동해 북부 러시아-북한 해상 훈련 공식 개시", redline: false, esc: +6 }
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: "taiwan_blockade",
+        title: "대만 해협 전면 봉쇄 및 주한미군 차출 압박",
+        desc: "중국 해군이 대만 섬 해상·공중을 전면 포위 봉쇄했습니다. 트럼프 행정부는 주한미군의 대만 해협 투입 동의와 한국 해군의 공동 참가를 요구하고 있습니다.",
+        initialEscalation: 70,
+        options: [
+          {
+            title: "주한미군 작전 유연성 존중 및 후방 물류·인도적 지원 표명",
+            desc: "직접 전투 참가는 유보 · 비전투 수송 및 물류 지원으로 한정",
+            doctrine: "동맹 관리와 직접 참전 회피의 절충",
+            doctrineKey: "statusquo",
+            escDelta: -5, secDelta: +4, econDelta: -4, allDelta: +8,
+            rounds: {
+              1: {
+                title: "주한미군 작전 유연성 존중 및 후방 물류·인도적 지원 표명",
+                desc: "직접 전투 참가는 유보 · 비전투 수송 및 물류 지원으로 한정"
+              },
+              2: {
+                title: "비전투 보급 한정 및 대중 서해 직통 완충 채널 가동",
+                desc: "초계 확대 요구 선긋기 · 대중 미사일 조준 위협 차단 외교"
+              },
+              3: {
+                title: "인도주의 구조선 파견 및 대중 해상 통상로 보호",
+                desc: "전투함 파병 최후통첩 회피 · 중·러 전면 해상 통상 봉쇄 방어"
+              }
+            },
+            tiers: {
+              t1: {
+                trump: { text: "더 많은 함정을 원했지만 후방 지원도 좋다. 우리는 대만 해협을 열어젖힐 것이다.", action: "제7함대 대만 해협 돌입 작전 개시", redline: false, esc: +5 },
+                xi: { text: "한국이 미국의 침략적 모험주의에 연료를 대는 것은 자국의 미래를 깎아먹는 일이다.", action: "대한국 공급망 품목 정밀 검토 착수", redline: false, esc: -2 },
+                putin: { text: "아시아태평양에서 서방의 긴장 고조는 전 세계를 불안에 빠뜨리고 있다.", action: "중·러 극동 연합 해상 초계비행 실시", redline: false, esc: +4 }
+              },
+              t2: {
+                trump: { text: "후방 지원만으로는 부족하다! 연료와 물류뿐 아니라 한국 공군의 초계비행 지원까지 즉각 확대하라. 이것이 동맹의 의무다!", action: "오산·군산 기지 미 전폭기 편대 대만 방면 출격 승인", redline: false, esc: +10 },
+                xi: { text: "한국이 미군의 병참 기지를 자처한다면 그 기지 역시 중국 미사일의 합법적 타깃이 될 수 있음을 경고한다. 즉각 지원을 중단하라!", action: "동중국해 미사일 기지 한국 방면 조준 훈련 전개", redline: true, esc: +12 },
+                putin: { text: "분쟁의 확산은 불가피해졌다. 러시아는 중국의 후방을 지키기 위해 오호츠크해와 동해 전역의 통제력을 높이겠다.", action: "동해 방면 잠수함 전력 초계 활동 확대", redline: false, esc: +8 }
+              },
+              t3: {
+                trump: { text: "대만 해협 전투가 격화되고 있다. 한국 해군 구축함 3척을 즉각 연합 호위전단에 합류시켜라. 불응 시 동맹 파기다!", action: "한국 정부에 최후통첩성 해군 파병 공식 통보", redline: false, esc: +15 },
+                xi: { text: "한국의 직접 개입은 대중국 선전포고와 다름없다. 서해와 남해의 모든 해상 통로를 봉쇄하고 한국 수출 선박을 차단하겠다!", action: "대한국 전면 해상 통상 봉쇄령 발동", redline: true, esc: +18 },
+                putin: { text: "유라시아 동단에서 세계대전의 뇌관이 당겨지고 있다. 러시아군은 어떠한 비대칭적 시나리오에도 즉각 대응할 것이다.", action: "극동 전략미사일군 최고 발사 대기 태세 하달", redline: true, esc: +16 }
+              }
+            }
+          },
+          {
+            title: "대만 해협 비군사화 촉구 및 전략적 중립 선언",
+            desc: "한반도 안보 최우선 선언 · 미군 차출 유감 및 평화 대화 촉구",
+            doctrine: "국익 실사구시 및 전략적 자율성",
+            doctrineKey: "diplomacy",
+            escDelta: -10, secDelta: +2, econDelta: +8, allDelta: -15,
+            rounds: {
+              1: {
+                title: "대만 해협 비군사화 촉구 및 전략적 중립 선언",
+                desc: "한반도 안보 최우선 선언 · 미군 차출 유감 및 평화 대화 촉구"
+              },
+              2: {
+                title: "중국 선박 그린레인 확보 및 러시아 에너지 연대 구축",
+                desc: "미 관세 압박 방어 · 대중 해상 안전항로 및 러 에너지 확보"
+              },
+              3: {
+                title: "미·중 정상 담판 중재 및 아시아 다자 협력기구 창설",
+                desc: "미·중 직접 빅딜 타결 유도 · 동아시아 평화번영 협력체 주도"
+              }
+            },
+            tiers: {
+              t1: {
+                trump: { text: "매우 실망스럽다! 한국이 우리를 돕지 않는다면 방위 조약을 재검토할 수도 있다.", action: "한국산 핵심 부품 관세 25% 인상 검토 트윗", redline: false, esc: -4 },
+                xi: { text: "양안 문제는 중국 내정이다. 한국의 독립적이고 주권적인 입장을 지지하며 양국 교역을 지속한다.", action: "대한국 경제 협력 유지 성명", redline: false, esc: -8 },
+                putin: { text: "패권에 굴복하지 않는 주권 국가의 태도를 평가한다.", action: "극동 경제 특구 협력 의사 타진", redline: false, esc: -3 }
+              },
+              t2: {
+                trump: { text: "중립이라고? 배은망덕한 태도다! 한국에 50% 보복 관세를 매기고 주한미군 철수 타당성 조사를 즉시 지시하겠다!", action: "주한미군 단계적 철수 검토 및 50% 관세 행정명령 발표", redline: false, esc: -2 },
+                xi: { text: "한국의 일관된 자주 외교를 적극 환영한다. 대만 봉쇄 국면에서도 한국 선박의 안전 통행을 특별 보장하고 한중 FTA 2단계를 가속화하겠다.", action: "한국 선박 안전항로 그린레인 지정 및 통상 우대 협약 체결", redline: false, esc: -12 },
+                putin: { text: "다극화 세계로 가는 위대한 걸음이다. 우리는 한국과의 전면적 에너지 공급망 확대를 공식 제안한다.", action: "러시아산 원유·천연가스 한국 특별 공급 계약 체결 추진", redline: false, esc: -8 }
+              },
+              t3: {
+                trump: { text: "한국의 독자 노선을 보며 중국과 직접 담판을 짓기로 했다. 나와 시진핑의 빅딜로 대만 해협을 풀 테니, 한국은 알아서 살아남아라!", action: "미·중 정상 간 직통 긴급 담판 및 관세 타결 추진", redline: false, esc: -15 },
+                xi: { text: "동아시아의 평화는 역내 국가 스스로 지킬 수 있음이 증명되었다. 한국과 함께 아시아 안보·경제 협의체를 출범시키겠다.", action: "아시아 다자간 평화번영 협력기구 창설 제안", redline: false, esc: -18 },
+                putin: { text: "서방의 동아시아 패권 전략이 무너졌다. 새로운 유라시아 질서의 안정적 파트너로서 한국의 번영을 지지한다.", action: "유라시아 경제 연합-한국 간 전략적 파트너십 선언", redline: false, esc: -15 }
+              }
+            }
+          },
+          {
+            title: "자유민주 진영 연대 및 대만 해역 기동전단 파견",
+            desc: "미국 요구 전폭 수용 · 해군 기동전단 대만 인근 해역 급파",
+            doctrine: "한미동맹 전면 일체화 및 대중 강경 압박",
+            doctrineKey: "deterrence",
+            escDelta: +18, secDelta: +5, econDelta: -20, allDelta: +20,
+            rounds: {
+              1: {
+                title: "자유민주 진영 연대 및 대만 해역 기동전단 파견",
+                desc: "미국 요구 전폭 수용 · 해군 기동전단 대만 인근 해역 급파"
+              },
+              2: {
+                title: "연합 해상 타격전단 전개 및 중국 미사일 기지 억제",
+                desc: "7함대 연합 대만 북부 장악 · 중국 대함미사일 실전 위협 분쇄"
+              },
+              3: {
+                title: "데프콘 2 하령 및 대만 봉쇄선 전면 돌파 작전",
+                desc: "압도적 연합 화력 총동원 · 대만 해역 해상 봉쇄망 무력 분쇄"
+              }
+            },
+            tiers: {
+              t1: {
+                trump: { text: "위대한 결단이다! 한국은 진정한 자유의 전사들이다. 우리는 중국을 박살낼 것이다.", action: "한·미 해군 연합 해상 봉쇄 차단 작전 단행", redline: false, esc: +15 },
+                xi: { text: "대한민국이 넘지 말아야 할 선을 넘었다. 이것은 중국에 대한 직접적 적대 행위다.", action: "한국에 대한 전면적 무역 금수 및 서해 군함 전면 출격", redline: true, esc: +20 },
+                putin: { text: "동아시아에서 새로운 전선이 열렸다. 러시아는 중국의 합법적 주권 수호를 확고히 지지한다.", action: "태평양함대 극동 전력 전면 배치", redline: true, esc: +15 }
+              },
+              t2: {
+                trump: { text: "환상적이다! 한국 해군과 미 7함대가 대만 북부를 완벽히 장악했다. 중국 본토 해안 군사기지에 대한 핀셋 타격도 검토하라!", action: "대만 인근 한미 연합 해상 타격 전단 전면 전개", redline: false, esc: +20 },
+                xi: { text: "한국의 오판은 국가적 재앙이 될 것이다! 한국 기업의 중국 내 모든 자산을 동결하고 서해상의 한국 함정에 대한 조준 격파를 승인했다!", action: "한국 기업 자산 동결 및 대함 탄도미사일 실전 발사 대기", redline: true, esc: +25 },
+                putin: { text: "러시아 해군이 중국 함대와 합동으로 대만 동북방에 진입했다. 더 이상 물러설 곳은 없다.", action: "중·러 연합 해군 함대 동중국해 전면 집결", redline: true, esc: +22 }
+              },
+              t3: {
+                trump: { text: "시진핑이 벼랑 끝에 몰렸다! 항복을 받아내기 전까지 단 한 발짝도 물러서지 않는다. 전면전도 불사한다!", action: "최고 수준의 전면전 대비 데프콘 2 발령", redline: false, esc: +25 },
+                xi: { text: "중화의 존엄을 건 최후의 일전이다! 조국의 통일을 방해하는 모든 적대 전력을 괴멸시킬 것이다!", action: "중국 전군 1급 총동원령 선포 및 미사일 전면 포격 개시", redline: true, esc: +30 },
+                putin: { text: "세계 대전의 방아쇠가 당겨졌다. 러시아는 전략 억제 수단을 포함한 모든 자원을 사용할 것이다.", action: "전략 로켓군 전면 핵억제 임무 발동", redline: true, esc: +28 }
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: "west_sea_clash",
+        title: "서해 NLL 해상 충돌 및 동북아 관세 전면전",
+        desc: "서해 NLL 인근에서 드론 침투와 포격전이 발생하고, 트럼프 대통령은 북·중·러 기업에 100% 관세를 선언했습니다.",
+        initialEscalation: 60,
+        options: [
+          {
+            title: "NLL 단호한 격퇴 및 대북 확성기·전방 타격 자산 즉각 전개",
+            desc: "도발 원점 강력 비례 응징 · 서해 전방 화력 자산 총동원",
+            doctrine: "즉각적 비례 응징 및 억제력 투사",
+            doctrineKey: "deterrence",
+            escDelta: +10, secDelta: +5, econDelta: -8, allDelta: +10,
+            rounds: {
+              1: {
+                title: "NLL 단호한 격퇴 및 대북 확성기·전방 타격 자산 즉각 전개",
+                desc: "도발 원점 강력 비례 응징 · 서해 전방 화력 자산 총동원"
+              },
+              2: {
+                title: "미 이지스 전단 연계 서해 화력 증강 및 전진기지 타격 태세",
+                desc: "이지스 구축함 연계 · 중·북 연안 전진기지 동시 타격 태세 격상"
+              },
+              3: {
+                title: "한미 스텔스기 상시 초계 및 서해 NLL 제해권 영구 확립",
+                desc: "B-2·F-22 정밀 타격 편대 연계 · 서해 NLL 영구 방어선 결전"
+              }
+            },
+            tiers: {
+              t1: {
+                trump: { text: "바로 그것이다! 약하게 굴면 안 된다. 내가 100% 관세로 북한과 중국의 숨통을 조이고 있다.", action: "대북·대중 세컨더리 보이콧 전면 발동", redline: false, esc: +8 },
+                xi: { text: "서해 완충 구역에서 무모한 긴장 고조를 멈추지 않으면 인민해방군이 직접 개입할 것이다.", action: "서해 함대 전투 초계비행 강화", redline: true, esc: +12 },
+                putin: { text: "한반도에서의 무력 도발은 좌시될 수 없다.", action: "러시아 국방부 엄중 경고 성명", redline: false, esc: +6 }
+              },
+              t2: {
+                trump: { text: "화력을 더 쏟아부어라! 서해에 이지스함 3척을 추가 급파하고 대중국 150% 관세 법안에 즉시 서명하겠다!", action: "이지스 구축함 급파 및 추가 150% 관세 행정명령 서명", redline: false, esc: +12 },
+                xi: { text: "인민해방군 서해 함대에 실탄 사격 훈련을 명령했다. 한국 함정이 1cm라도 경계선을 넘으면 즉시 격침될 것이다!", action: "서해 NLL 인접 해역 해상 봉쇄 및 유도탄 고속정 전개", redline: true, esc: +15 },
+                putin: { text: "러시아는 동맹국에 대한 위협을 묵과하지 않는다. 서해 사태에 대응해 극동 미사일 여단을 긴급 이동시켰다.", action: "극동 미사일 전력 한반도 인접 전진 배치", redline: true, esc: +14 }
+              },
+              t3: {
+                trump: { text: "끝장을 볼 시간이다. 서해 상공에 F-22와 B-2 편대를 상시 초계 비행시키고 적의 지휘부를 정밀 타격하겠다!", action: "스텔스기 상시 초계 및 정밀 타격 승인", redline: false, esc: +18 },
+                xi: { text: "중국의 앞마당을 전쟁터로 만들려는 기도를 분쇄할 것이다. 북부전구 육·해·공 합동 타격군이 발진했다!", action: "서해 전면 군사작전 개시", redline: true, esc: +22 },
+                putin: { text: "모든 억제선이 무너졌다. 러시아는 약속된 군사 지원을 물리적으로 집행할 것이다.", action: "북한 해역 러시아 군함 진입", redline: true, esc: +20 }
+              }
+            }
+          },
+          {
+            title: "서해 충돌 완화 군사회담 제의 및 공급망 긴급 경제비상체제",
+            desc: "서해 군사 핫라인 긴급 개설 · 경제 안보 리스크 회의 소집",
+            doctrine: "확전 방지 및 민생·경제 리스크 방어",
+            doctrineKey: "diplomacy",
+            escDelta: -12, secDelta: +4, econDelta: +6, allDelta: -2,
+            rounds: {
+              1: {
+                title: "서해 충돌 완화 군사회담 제의 및 공급망 긴급 경제비상체제",
+                desc: "서해 군사 핫라인 긴급 개설 · 경제 안보 리스크 회의 소집"
+              },
+              2: {
+                title: "서해 평화수역 4자 회담 수락 및 미·중 관세 면제 추진",
+                desc: "우발 충돌 방지 평화수역 논의 · 대미·대중 핵심 공급망 동시 안정"
+              },
+              3: {
+                title: "서해 평화개발 협정 체결 및 동북아 불가침 체제 완성",
+                desc: "서해 공동 평화 번영 수역 전환 · 미·중·러 다자 안보 협정 타결"
+              }
+            },
+            tiers: {
+              t1: {
+                trump: { text: "싸움을 피하려는 건 알겠지만, 경제 제재 대열에서 이탈하면 한국도 예외는 아니다.", action: "한국산 품목 제재 면제 협상 여지 타진", redline: false, esc: -5 },
+                xi: { text: "충돌을 막으려는 한국의 이성적 조치를 환영한다. 서해는 평화의 바다가 되어야 한다.", action: "서해 군사 경계선 내 후퇴 조치", redline: false, esc: -8 },
+                putin: { text: "상황을 대화로 통제하려는 시도를 긍정적으로 본다.", action: "극동 훈련 강도 일부 조정", redline: false, esc: -4 }
+              },
+              t2: {
+                trump: { text: "이 대통령이 실용적으로 나온다면 관세 면제와 서해 평화안을 묶어서 빅딜 협상 테이블을 열 수 있다. 조건을 가져와라!", action: "한국산 전략 품목 관세 면제 검토 착수", redline: false, esc: -10 },
+                xi: { text: "한국의 확전 방지 노력을 평가하며 서해 공동어로 및 평화수역 조성을 위한 긴급 회담에 응하겠다. 한중 공급망도 정상 가동한다.", action: "서해 평화수역 4자 회담 제안 및 공급망 특별 보장", redline: false, esc: -14 },
+                putin: { text: "긴장 완화의 모멘텀이 생겼다. 우리는 동북아 다자 대화 테이블을 지지하며 실질적 에너지 협력안을 논의하겠다.", action: "러시아-한국 에너지 협의체 재가동 승인", redline: false, esc: -10 }
+              },
+              t3: {
+                trump: { text: "역사적인 합의다! 서해의 위기를 평화와 새로운 무역 협정으로 바꾸어냈다. 우리는 승리했다!", action: "동북아 평화통상 협정 서명식 합의", redline: false, esc: -18 },
+                xi: { text: "서해를 평화와 공동 번영의 바다로 확정했다. 역내 국가들의 단결된 지혜가 갈등을 이겨냈다.", action: "서해 평화협정 및 공동개발 조약 체결", redline: false, esc: -20 },
+                putin: { text: "극동의 평화가 완전히 복원되었다. 호혜적이고 안전한 유라시아 평화 번영 시대의 출발이다.", action: "동북아 다자 불가침 안전보장 협정 서명", redline: false, esc: -16 }
+              }
+            }
+          },
+          {
+            title: "서해 NLL 자위적 방어선 고수 및 미·중 관세전 확전 거리두기",
+            desc: "NLL 침범 현장 지휘관 단호 대응 · 미군 추가 진입 자제 및 사태 국지화",
+            doctrine: "자위권 사수 및 분쟁 국지화 통제",
+            doctrineKey: "statusquo",
+            escDelta: -3, secDelta: +6, econDelta: +3, allDelta: -2,
+            rounds: {
+              1: {
+                title: "서해 NLL 자위적 방어선 고수 및 미·중 관세전 확전 거리두기",
+                desc: "NLL 침범 현장 지휘관 단호 대응 · 미군 추가 진입 자제 및 사태 국지화"
+              },
+              2: {
+                title: "독자 초계선 유지 및 미·중 관세·보복 이중 리스크 방어",
+                desc: "관세 줄세우기 편입 거부 · 서해 국지 충돌 확전 엄격 통제"
+              },
+              3: {
+                title: "비군사 완충지대 잠정 합의 및 서해 국지 분쟁 완전 동결",
+                desc: "주변국 대결 편입 방지 · 남북 및 주변국 충돌 방지 실무 안정"
+              }
+            },
+            tiers: {
+              t1: {
+                trump: { text: "한국이 스스로 NLL을 지키는 것은 좋다. 하지만 중국을 압박하는 내 관세 정책에 협조하지 않으면 관세 면제는 없다.", action: "한국 정부에 대중 관세 연대 참여 압박", redline: false, esc: -1 },
+                xi: { text: "한국 해군이 미군을 끌어들이지 않고 자제력을 보이는 것은 다행이다. 불필요한 마찰을 피하길 바란다.", action: "서해 초계 함정 거리 유지 지시", redline: false, esc: -3 },
+                putin: { text: "서해의 국지적 안정이 유지되는지 지켜보겠다. 불필요한 확전은 아무에게도 득이 되지 않는다.", action: "전략적 관망 및 국경 정찰 유지", redline: false, esc: -2 }
+              },
+              t2: {
+                trump: { text: "미온적인 완충 조치로는 부족하다! 내 150% 관세 전선에 서지 않는다면 한국산 제품도 관세 대상에 오를 것이다.", action: "대한국 무역 제재 품목 검토 착수", redline: false, esc: +2 },
+                xi: { text: "한국의 독자 방어는 이해하나, 미군 함정의 서해 기항을 허용한다면 좌시하지 않겠다. 엄정한 중립을 지켜라.", action: "인접 영해 감시 레이더 가동 강화", redline: false, esc: +2 },
+                putin: { text: "지역 분쟁이 장기화되면 동북아 물류망에 차질이 빚어진다. 빠른 안정화가 이뤄져야 한다.", action: "극동 물류선 호위 전력 증강", redline: false, esc: +2 }
+              },
+              t3: {
+                trump: { text: "어정쩡한 태도는 동맹의 자격을 의심케 한다. 미국과 함께 전면전에 맞설 것인지 스스로 결정하라!", action: "안보 협력 지원금 조건부 동결 통보", redline: false, esc: +5 },
+                xi: { text: "불확실성이 계속된다면 서해 수역의 한국 상선 통항에 제한을 둘 수밖에 없다. 확실한 비확전 조치를 요구한다.", action: "서해 통항 안전 점검 구역 설정", redline: false, esc: +4 },
+                putin: { text: "현상 유지의 한계에 도달했다. 러시아는 동북아 안보 균형을 위해 필요한 독자 조치를 취할 것이다.", action: "동해-서해 연결 기동 훈련 전개", redline: false, esc: +5 }
+              }
+            }
+          }
+        ]
+      }
+    ];
+
+    // State
+
+    // 4 Countries National Profile Dataset
+    const countryProfiles = {
+      kr: {
+        code: 'kr',
+        name: '대한민국',
+        title: '이재명 대통령',
+        flag: 'assets/flag_kr.svg',
+        themeColor: 'indigo',
+        borderClass: 'border-indigo-500',
+        ringClass: 'ring-indigo-400',
+        badgeText: 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40',
+        scoreLabel: '실용합의 0.41',
+        traits: [
+          { label: '경제 정향성(민생/실용경제 경향)', val: '+0.01', color: 'text-blue-400' },
+          { label: '안보 정향성(상황대응/유연안보 경향)', val: '+0.10', color: 'text-red-400' },
+          { label: '위험 감수성(실리중심/모험 경향)', val: '0.46', color: 'text-slate-200' },
+          { label: '수사학 화법(직관/당당한 화법)', val: '-0.12', color: 'text-purple-300' }
+        ],
+        quote: '평화가 곧 밥이자 경제, 국익 중심 실용외교',
+        doctrine: '동맹과 실리의 균형점을 포착하여 한반도 안보와 국민 경제를 동시에 수호하는 국익 실용주의적 결단을 추구합니다.'
+      },
+      us: {
+        code: 'us',
+        name: '미국',
+        title: '도널드 트럼프 대통령',
+        flag: 'assets/flag_us.svg',
+        themeColor: 'blue',
+        borderClass: 'border-blue-500',
+        ringClass: 'ring-blue-400',
+        badgeText: 'bg-blue-950/80 text-blue-300 border-blue-500/40',
+        scoreLabel: '딜 본능 0.62',
+        traits: [
+          { label: '경제 정향성(관세/보호무역 경향)', val: '+0.59', color: 'text-blue-400' },
+          { label: '안보 정향성(힘에 의한 평화 경향)', val: '+0.54', color: 'text-red-400' },
+          { label: '위험 감수성(위험 승부사 경향)', val: '0.60', color: 'text-slate-200' },
+          { label: '수사학 화법(직설/쇼맨십 화법)', val: '-0.58', color: 'text-purple-300' }
+        ],
+        quote: '역사상 가장 위대한 승리, 딜을 원하면 전화해라',
+        doctrine: '강력한 군사적 힘의 투사와 상호주의 관세 압박을 병행하며, 협상 테이블에서 미국의 이익을 극대화하는 거래형 지도자입니다.'
+      },
+      cn: {
+        code: 'cn',
+        name: '중국',
+        title: '시진핑 국가주석',
+        flag: 'assets/flag_cn.svg',
+        themeColor: 'amber',
+        borderClass: 'border-amber-500',
+        ringClass: 'ring-amber-400',
+        badgeText: 'bg-amber-950/80 text-amber-300 border-amber-500/40',
+        scoreLabel: '원칙고수 0.25',
+        traits: [
+          { label: '경제 정향성(거대공급망/내수 경향)', val: '+0.26', color: 'text-blue-400' },
+          { label: '안보 정향성(핵심이익 결사항전 경향)', val: '+0.63', color: 'text-red-400' },
+          { label: '위험 감수성(계산된 모험형 경향)', val: '0.57', color: 'text-slate-200' },
+          { label: '수사학 화법(장중/근엄한 화법)', val: '-0.11', color: 'text-purple-300' }
+        ],
+        quote: '중화민족의 위대한 부흥, 주권 침해 불타협',
+        doctrine: '대만 해협과 서해 완충지대를 양보할 수 없는 핵심이익으로 규정하며, 공급망 통제와 해양 군사력으로 미국의 포위망에 결사 대응합니다.'
+      },
+      ru: {
+        code: 'ru',
+        name: '러시아',
+        title: '블라디미르 푸틴 대통령',
+        flag: 'assets/flag_ru.svg',
+        themeColor: 'rose',
+        borderClass: 'border-rose-500',
+        ringClass: 'ring-rose-400',
+        badgeText: 'bg-rose-950/80 text-rose-300 border-rose-500/40',
+        scoreLabel: '진영결속 0.36',
+        traits: [
+          { label: '경제 정향성(전시경제/탈달러 경향)', val: '+0.12', color: 'text-blue-400' },
+          { label: '안보 정향성(핵억제/나토대응 경향)', val: '+0.54', color: 'text-red-400' },
+          { label: '위험 감수성(계산된 모험형 경향)', val: '0.43', color: 'text-slate-200' },
+          { label: '수사학 화법(냉철/엄중한 화법)', val: '-0.03', color: 'text-purple-300' }
+        ],
+        quote: '다극화 세계 질서, 비대칭 보복과 군사원조',
+        doctrine: '북·러 포괄적 조약과 비대칭 핵 억제 교리를 지렛대 삼아, 동북아 전선에서 미국과 동맹국의 입지를 압박하고 다극 질서를 추구합니다.'
+      }
+    };
+
+    // State Variables
+    let currentScenarioIndex = 0;
+    let currentTurn = 1;
+    let maxTurns = 3;
+    let escalation = 65;
+    let security = 60;
+    let economy = 65;
+    let alliance = 70;
+    let logs = [];
+    let lastDoctrineKey = null;
+    let stanceConsecutiveCount = 1;
+    let currentInspectedCountry = 'kr';
+
+    const scenarioThemes = [
+      {
+        color: 'blue',
+        borderClass: 'border-blue-500',
+        ringClass: 'ring-blue-500',
+        shadowClass: 'shadow-blue-500/20',
+        bgBadge: 'bg-blue-950/80',
+        textBadge: 'text-blue-300 font-bold',
+        borderBadge: 'border-blue-700',
+        pingClass: 'bg-blue-500',
+        label: '[연동 활성화] 북한 반도체 타격 & 북·러 조약 위기',
+        icon: '💥'
+      },
+      {
+        color: 'amber',
+        borderClass: 'border-amber-500',
+        ringClass: 'ring-amber-500',
+        shadowClass: 'shadow-amber-500/20',
+        bgBadge: 'bg-amber-950/80',
+        textBadge: 'text-amber-300 font-bold',
+        borderBadge: 'border-amber-700',
+        pingClass: 'bg-amber-500',
+        label: '[연동 활성화] 대만 해협 전면 봉쇄 및 차출 압박',
+        icon: '🚢'
+      },
+      {
+        color: 'red',
+        borderClass: 'border-red-500',
+        ringClass: 'ring-red-500',
+        shadowClass: 'shadow-red-500/20',
+        bgBadge: 'bg-red-950/80',
+        textBadge: 'text-red-300 font-bold',
+        borderBadge: 'border-red-700',
+        pingClass: 'bg-red-500',
+        label: '[연동 활성화] 서해 NLL 충돌 & 동북아 관세전',
+        icon: '⚔️'
+      },
+      {
+        color: 'indigo',
+        borderClass: 'border-indigo-500',
+        ringClass: 'ring-indigo-500',
+        shadowClass: 'shadow-indigo-500/20',
+        bgBadge: 'bg-indigo-950/80',
+        textBadge: 'text-indigo-300 font-bold',
+        borderBadge: 'border-indigo-700',
+        pingClass: 'bg-indigo-500',
+        label: '[커스텀 연동] 사용자 정의 위기 시나리오',
+        icon: '✍️'
+      }
+    ];
+
+    // Inspect Country & Auto-Switch to Country Tab
+    function inspectCountry(code) {
+      currentInspectedCountry = code;
+      const p = countryProfiles[code];
+      if (!p) return;
+
+      // Update seat highlight on the Round Table
+      ['kr', 'us', 'cn', 'ru'].forEach(c => {
+        const seatEl = document.getElementById(`seat-${c}`);
+        if (seatEl) {
+          if (c === code) {
+            seatEl.classList.add('seat-active-ring', 'ring-2', 'ring-cyan-400');
+          } else {
+            seatEl.classList.remove('seat-active-ring', 'ring-2', 'ring-cyan-400');
+          }
+        }
+      });
+
+      // Render profile inside Sub Screen (30% Width: beautifully formatted)
+      const contentEl = document.getElementById('sub-country-content');
+      if (contentEl) {
+        contentEl.innerHTML = `
+          <div class="rounded-xl p-3 bg-slate-900 border-2 ${p.borderClass} shadow-md space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <img src="${p.flag}" class="w-8 h-5.5 object-cover rounded border border-slate-700 shadow-sm" alt="${p.name}">
+                <div>
+                  <h4 class="font-extrabold text-xs text-white leading-tight">${p.name}</h4>
+                  <p class="text-[10px] text-slate-400">${p.title}</p>
+                </div>
+              </div>
+              <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold ${p.badgeText}">
+                ${p.scoreLabel}
+              </span>
+            </div>
+
+            <div class="space-y-1 pt-1 text-xs border-t border-slate-800">
+              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">4대 전략 정향성 지표</div>
+              ${p.traits.map(t => `
+                <div class="flex justify-between items-center text-[10px] sm:text-[11px] text-slate-300 py-0.5">
+                  <span class="truncate pr-1">${t.label}</span>
+                  <span class="font-semibold font-mono ${t.color} shrink-0">${t.val}</span>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="border-t border-slate-800 pt-1.5">
+              <div class="text-[10px] text-slate-400 font-bold mb-1">시그니처 외교 교리:</div>
+              <div class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-200 italic leading-snug">
+                "${p.quote}"
+              </div>
+            </div>
+
+            <div class="border-t border-slate-800 pt-1.5">
+              <div class="text-[10px] text-slate-400 font-bold mb-0.5">전략적 특성 요약:</div>
+              <p class="text-[10px] text-slate-300 leading-relaxed font-medium">
+                ${p.doctrine}
+              </p>
+            </div>
+          </div>
+        `;
+      }
+
+      switchSubTab('country');
+    }
+
+    // Switch Secondary Screen Tabs
+    function switchSubTab(tabName) {
+      const tabs = ['country', 'scenario', 'telemetry'];
+      const tagLabels = {
+        country: '국가 인텔',
+        scenario: '시나리오 브리핑',
+        telemetry: '전황 & 로그'
+      };
+
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const panel = document.getElementById(`sub-panel-${t}`);
+        if (btn) {
+          if (t === tabName) {
+            btn.className = "py-1 px-1 rounded-lg text-center transition-all bg-blue-600 text-white shadow-xs font-bold cursor-pointer";
+          } else {
+            btn.className = "py-1 px-1 rounded-lg text-center transition-all text-slate-400 hover:text-white font-bold cursor-pointer";
+          }
+        }
+        if (panel) {
+          if (t === tabName) {
+            panel.classList.remove('hidden');
+          } else {
+            panel.classList.add('hidden');
+          }
+        }
+      });
+
+      const tagEl = document.getElementById('sub-active-tab-tag');
+      if (tagEl && tagLabels[tabName]) {
+        tagEl.innerText = tagLabels[tabName];
+      }
+    }
+
+    function selectScenario(index) {
+      currentScenarioIndex = index;
+      const customPanel = document.getElementById('custom-scenario-panel');
+      const activeBox = document.getElementById('active-scenario-box');
+
+      // Update 4 Cards appearance
+      for (let i = 0; i <= 3; i++) {
+        const card = document.getElementById(`scen-card-${i}`);
+        const borderLayer = card ? card.querySelector('.card-border-layer') : null;
+        const t = scenarioThemes[i];
+
+        if (i === index) {
+          if (card) card.className = "relative rounded-lg text-left transition-colors duration-200 group cursor-pointer z-10";
+          if (borderLayer) borderLayer.className = `card-border-layer absolute inset-0 rounded-lg border-2 ${t.borderClass} shadow-md ${t.shadowClass} pointer-events-none transition-colors duration-200`;
+        } else {
+          if (card) card.className = "relative rounded-lg text-left transition-colors duration-200 group cursor-pointer z-10";
+          if (borderLayer) borderLayer.className = "card-border-layer absolute inset-0 rounded-lg border-2 border-white/15 group-hover:border-white/35 pointer-events-none transition-colors duration-200";
+        }
+      }
+
+      const curTheme = scenarioThemes[index];
+
+      // Update Round Table dynamic background image
+      const scenarioBgImages = [
+        'assets/scen_dprk_strike.jpg',
+        'assets/scen_taiwan_blockade.jpg',
+        'assets/scen_west_sea_clash.jpg',
+        'assets/scen_custom_warroom.jpg'
+      ];
+      const tblBg = document.getElementById('table-scenario-bg');
+      if (tblBg && scenarioBgImages[index]) {
+        tblBg.style.backgroundImage = `url('${scenarioBgImages[index]}')`;
+      }
+
+      if (index === 3) {
+        if (customPanel) customPanel.classList.remove('hidden');
+        if (activeBox) activeBox.classList.add('hidden');
+        // Sync Round Table dynamic backdrop image
+      const scenarioBgImages = [
+        'assets/scen_dprk_strike.jpg',
+        'assets/scen_taiwan_blockade.jpg',
+        'assets/scen_west_sea_clash.jpg',
+        'assets/scen_custom_warroom.jpg'
+      ];
+      const tblBg = document.getElementById('table-scenario-bg');
+      if (tblBg && scenarioBgImages[currentScenarioIndex]) {
+        tblBg.style.backgroundImage = `url('${scenarioBgImages[currentScenarioIndex]}')`;
+      }
+
+      const tblScenTitle = document.getElementById('table-scenario-title');
+        if (tblScenTitle) {
+          const customTitleInput = document.getElementById('custom-input-title');
+          tblScenTitle.innerText = (customTitleInput && customTitleInput.value) ? customTitleInput.value : '사용자 정의 자유 시나리오';
+        }
+      } else {
+        if (customPanel) customPanel.classList.add('hidden');
+        if (activeBox) activeBox.classList.remove('hidden');
+
+        const reopenBtn = document.getElementById('reopen-custom-btn');
+        if (reopenBtn) reopenBtn.classList.add('hidden');
+
+        if (activeBox) {
+          activeBox.className = `rounded-xl p-3 bg-slate-900 border-2 ${curTheme.borderClass} shadow-md space-y-2 transition-all duration-300`;
+        }
+        
+        const badgeEl = document.getElementById('connector-badge');
+        if (badgeEl) {
+          badgeEl.className = `px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold ${curTheme.bgBadge} ${curTheme.textBadge} border ${curTheme.borderBadge} flex items-center gap-1.5 shadow-sm`;
+        }
+        const pingDot = document.getElementById('connector-ping-dot');
+        if (pingDot) {
+          pingDot.className = `w-1.5 h-1.5 rounded-full ${curTheme.pingClass} animate-ping`;
+        }
+        const cardLabelEl = document.getElementById('connector-card-label');
+        if (cardLabelEl) {
+          cardLabelEl.innerText = curTheme.label;
+        }
+
+        const titleIconEl = document.getElementById('scenario-title-icon');
+        if (titleIconEl) titleIconEl.innerText = curTheme.icon;
+
+        resetGame();
+      }
+
+      // Auto switch secondary screen to scenario briefing
+      switchSubTab('scenario');
+    }
+
+    function openCustomConfig() {
+      const customPanel = document.getElementById('custom-scenario-panel');
+      const activeBox = document.getElementById('active-scenario-box');
+      if (customPanel && activeBox) {
+        customPanel.classList.remove('hidden');
+        activeBox.classList.add('hidden');
+      }
+      switchSubTab('scenario');
+    }
+
+    function loadCustomPreset(type) {
+      const titleInput = document.getElementById('custom-input-title');
+      const descInput = document.getElementById('custom-input-desc');
+      const escInput = document.getElementById('custom-input-esc');
+      
+      if (type === 1) {
+        titleInput.value = "독도 인근 제3국 함대 진입 및 해상 대치 위기";
+        descInput.value = "동해 독도 반경 영해 인근에 제3국 잠수함 전단과 대규모 해상 전력이 진입을 시도하며 일촉즉발의 해상 대치가 시작되었습니다. 트럼프는 한미 연합 자산 투입을 압박하고 중·러는 비례적 맞대응을 경고합니다.";
+        escInput.value = 68;
+      } else if (type === 2) {
+        titleInput.value = "동북아 반도체 핵심 희토류 전면 금수 및 공급망 마비";
+        descInput.value = "중·러가 한반도 인접 해역 봉쇄와 함께 첨단 반도체 생산에 필수적인 희토류 수출을 전면 통제했습니다. 트럼프는 100% 보복 관세를 요구하며 한국의 결단을 촉구하고 있습니다.";
+        escInput.value = 60;
+      }
+      document.getElementById('custom-esc-val').innerText = escInput.value + '%';
+    }
+
+    function applyCustomScenario() {
+      const titleVal = document.getElementById('custom-input-title').value.trim() || "사용자 직접 정의 위기 시나리오";
+      const descVal = document.getElementById('custom-input-desc').value.trim() || "플레이어가 직접 정의한 지정학적 위기 상황입니다.";
+      const escVal = parseInt(document.getElementById('custom-input-esc').value, 10) || 65;
+
+      const customScenarioObj = {
+        id: "custom_scenario",
+        title: titleVal,
+        desc: descVal,
+        initialEscalation: escVal,
+        options: [
+          {
+            title: "한미 연합 억제력 총동원 및 전략 자산 전진 배치",
+            desc: "동맹의 군사적 힘을 바탕으로 위협을 즉각 억제하고 상대국의 추가 행동을 차단한다.",
+            doctrine: "한미동맹 중심 강경 억제",
+            doctrineKey: "deterrence",
+            escDelta: +10, secDelta: +10, econDelta: -8, allDelta: +15,
+            rounds: {
+              1: {
+                title: "한미 연합 억제력 총동원 및 전략 자산 전진 배치",
+                desc: "동맹의 군사적 힘을 바탕으로 위협을 즉각 억제하고 상대국의 추가 행동을 차단한다."
+              },
+              2: {
+                title: "동맹국 연합 해상·공중 차단선 전면 전개 및 군사적 우위 선언",
+                desc: "미 해군 항모전단 및 공중급유 자산과 연계하여 분쟁 구역에 대한 강력한 압박망을 구축한다."
+              },
+              3: {
+                title: "최후 결전 태세 확립 및 주변국 양보 강제 최후통첩",
+                desc: "확전의 위험을 감수하면서도 적성 세력의 양보를 관철하기 위한 최고 수위 연합 억제 태세를 유지한다."
+              }
+            },
+            tiers: {
+              t1: {
+                trump: { text: "완벽하다! 힘이 없으면 평화도 없다. 미군이 확실하게 뒤를 받쳐주겠다.", action: "미 7함대 전력 및 전략폭격기 즉각 파견", redline: false, esc: +8 },
+                xi: { text: "한반도 주변 군사화는 용납할 수 없다. 우리는 필요한 모든 조치를 취할 것이다.", action: "북부전구 1급 전투대비태세 발령", redline: false, esc: +8 },
+                putin: { text: "외세의 군사적 위협에 침묵하지 않는다. 우리는 조약 의무를 행동으로 증명하겠다.", action: "태평양함대 미사일 순양함 긴급 출항", redline: false, esc: +6 }
+              },
+              t2: {
+                trump: { text: "이것이 바로 내가 원하던 힘의 우위다! 중·러가 굴복할 때까지 몰아붙여라.", action: "전략핵잠(SSBN) 기지 입항 및 추가 관세 압박", redline: false, esc: +14 },
+                xi: { text: "대한민국이 위험한 도박을 하고 있다. 레드라인을 넘으면 상상 이상의 대가를 치를 것이다.", action: "대한국 핵심 광물 수출 전면 중단 조치", redline: true, esc: +16 },
+                putin: { text: "동맹 조약 제4조에 의거해 즉각 군사원조를 개시하겠다. 전술핵 경보를 상향한다.", action: "전술핵 운용 부대 경보 단계 격상", redline: true, esc: +15 }
+              },
+              t3: {
+                trump: { text: "더 이상 물러설 곳은 없다! 적들의 도발을 영원히 끝내버릴 준비를 하라.", action: "킬체인 합동 승인 및 B-21 추가 전개 명령", redline: true, esc: +20 },
+                xi: { text: "중화인민공화국의 주권에 도전하는 자는 역사의 준엄한 심판을 받을 것이다.", action: "해상 전면 봉쇄 및 전탄 발사 대비 완료", redline: true, esc: +22 },
+                putin: { text: "우리는 경고했다. 이제 비대칭 보복 수단이 가동될 것이다.", action: "극동 미사일 기지 실탄 발사 준비 명령", redline: true, esc: +20 }
+              }
+            }
+          },
+          {
+            title: "다자간 긴급 중재 핫라인 가동 및 실용 외교 담판 제의",
+            desc: "주변 3국과의 고위급 특사 외교를 통해 군사 충돌을 방지하고 상호 이익 절충안을 제안한다.",
+            doctrine: "국익 중심 다자 실용외교",
+            doctrineKey: "diplomacy",
+            escDelta: -10, secDelta: +4, econDelta: +8, allDelta: -2,
+            rounds: {
+              1: {
+                title: "다자간 긴급 중재 핫라인 가동 및 실용 외교 담판 제의",
+                desc: "주변 3국과의 고위급 특사 외교를 통해 군사 충돌을 방지하고 상호 이익 절충안을 제안한다."
+              },
+              2: {
+                title: "트럼프 4자 서밋 수용 연계 베이징·모스크바 통상·에너지 정상화 담판",
+                desc: "트럼프의 관세 유예 조치와 시진핑·푸틴의 공급망·에너지 협력 의사를 연결하여 '4자 긴급 정상회담'을 전격 성사시킨다."
+              },
+              3: {
+                title: "역사적 '4자 포괄적 평화협정' 체결 및 다극화 상생 안전보장 확약",
+                desc: "강대국 정상들의 요구를 조율하여 비핵화-투자-물류망-에너지 안전보장을 포괄하는 불가침 평화협정에 대한민국 주도로 최종 서명한다."
+              }
+            },
+            tiers: {
+              t1: {
+                trump: { text: "대화를 원한다면 지켜보겠다. 하지만 실질적 딜이 없다면 관세 폭탄이 즉시 떨어진다.", action: "공습 일시 보류 및 4자 정상회담 조건 제시", redline: false, esc: -8 },
+                xi: { text: "충돌을 피하려는 한국의 합리적 노력을 지지하며, 진정성 있는 협상에 응할 용의가 있다.", action: "베이징 외교 실무 협의 채널 긴급 개설", redline: false, esc: -10 },
+                putin: { text: "우리는 외교적 해법을 열어두고 있다. 상호 존중이 담보되어야 한다.", action: "군사적 압박 강도 일시 동결", redline: false, esc: -6 }
+              },
+              t2: {
+                trump: { text: "좋다! 이 대통령의 담판 제안을 수용해 4자 정상 서밋을 개최하겠다. 내가 직접 판을 흔들겠다!", action: "4자 긴급 정상회담 수락 및 관세 유예 조치 검토", redline: false, esc: -14 },
+                xi: { text: "한국의 실용적 중재안을 환영하며 한중 통상 정상화와 공급망 안정을 즉각 약속한다.", action: "4자 평화선언 로드맵 제안 및 통상 전면 정상화", redline: false, esc: -16 },
+                putin: { text: "자주적인 평화 의지를 높이 평가한다. 극동 훈련을 축소하고 에너지 협력을 재개할 용의가 있다.", action: "극동 경계 등급 하향 및 삼각 에너지 협의체 재가동", redline: false, esc: -12 }
+              },
+              t3: {
+                trump: { text: "이것이 바로 내가 원하던 세기의 딜이다! 역사상 가장 위대한 평화 협정에 서명할 준비가 되었다.", action: "4자 평화협정 서명단 파견 선언", redline: false, esc: -20 },
+                xi: { text: "아시아 운명공동체의 새로운 장이 열렸다. 다자간 불가침 협정과 물류망 연결에 즉각 착수한다.", action: "상호불가침 협정 체결 및 유라시아 물류망 연결 합의", redline: false, esc: -20 },
+                putin: { text: "신뢰가 승리했다. 새로운 다극화 평화 질서의 보증인으로서 전면 협력하겠다.", action: "4자 안전보장 공동선언 서명 및 경제특구 전면 개방", redline: false, esc: -18 }
+              }
+            }
+          },
+          {
+            title: "독자적 자위권 발동 및 철저한 중립적 상황 관리",
+            desc: "특정 진영에 경도되지 않고 독자적인 방어 역량을 유지하며 사태의 확전을 엄격히 통제한다.",
+            doctrine: "자주국방 및 신중한 상황 통제",
+            doctrineKey: "statusquo",
+            escDelta: -4, secDelta: +5, econDelta: +3, allDelta: -3,
+            rounds: {
+              1: {
+                title: "독자적 자위권 발동 및 철저한 중립적 상황 관리",
+                desc: "특정 진영에 경도되지 않고 독자적인 방어 역량을 유지하며 사태의 확전을 엄격히 통제한다."
+              },
+              2: {
+                title: "외세의 확전 개입 차단 및 독자 방어 구역 비상 유지",
+                desc: "트럼프의 방위비·관세 압박과 중·러의 인접 해역 순찰 강화에 휘말리지 않고, 대한민국의 주권 방어 구역을 독자적으로 사수한다."
+              },
+              3: {
+                title: "비상 국방 자율성 선언 및 조건부 현상 유지 최종 동결",
+                desc: "강대국들의 양자택일 압박을 극복하고 한반도가 강대국 대리전 무대가 되지 않도록 비군사적 주권 자율성을 선언하며 사태를 동결한다."
+              }
+            },
+            tiers: {
+              t1: {
+                trump: { text: "한국이 스스로 하겠다면 말리지 않겠다. 하지만 방위비 청구서는 올라갈 것이다.", action: "방위비 분담금 증액 공식 요구", redline: false, esc: -2 },
+                xi: { text: "무모한 진영 대결에 휘말리지 않는 것은 현명하다. 완충지대는 지켜져야 한다.", action: "서해 정찰 감시 수준 현상 유지", redline: false, esc: -3 },
+                putin: { text: "상황을 냉철히 지켜보겠다. 우리의 조치는 상대방의 다음 수순에 달렸다.", action: "전략적 모호성 유지 및 관망", redline: false, esc: -2 }
+              },
+              t2: {
+                trump: { text: "애매한 태도로는 위험하다! 확실한 결단을 내리지 않으면 관세 폭탄이 갈 것이다.", action: "한국산 품목 관세 인상 검토 지시", redline: false, esc: +2 },
+                xi: { text: "현상 유지에만 머문다면 불신은 해소되지 않는다. 명확한 중립적 행동을 보여라.", action: "인접 해역 초계 순찰 증편", redline: false, esc: +2 },
+                putin: { text: "모호성으로는 위기를 넘길 수 없다. 러시아는 자체 안보 계획을 계속 추진한다.", action: "극동 방공망 레이더 가동 강화", redline: false, esc: +2 }
+              },
+              t3: {
+                trump: { text: "중립 놀음은 끝났다. 미국 편에 설 것인지 독자 생존할 것인지 결정하라!", action: "동맹 조건 전면 재검토 통보", redline: false, esc: +5 },
+                xi: { text: "상황의 장기화는 손실을 낳을 뿐이다. 비군사적 입장을 서약하지 않으면 통상 규제는 불가피하다.", action: "대한국 일부 전략 통상 규제 하달", redline: false, esc: +4 },
+                putin: { text: "우리는 기다릴 만큼 기다렸다. 예정된 극동 군사 훈련을 전면 단행하겠다.", action: "극동 연합 기동 훈련 전면 개시", redline: false, esc: +6 }
+              }
+            }
+          }
+        ]
+      };
+
+      scenarios[3] = customScenarioObj;
+
+      const customPanel = document.getElementById('custom-scenario-panel');
+      const activeBox = document.getElementById('active-scenario-box');
+      const curTheme = scenarioThemes[3];
+
+      if (customPanel) customPanel.classList.add('hidden');
+      if (activeBox) {
+        activeBox.classList.remove('hidden');
+        activeBox.className = `rounded-xl p-3 bg-slate-900 border-2 ${curTheme.borderClass} shadow-md space-y-2 transition-all duration-300`;
+      }
+
+      const badgeEl = document.getElementById('connector-badge');
+      if (badgeEl) {
+        badgeEl.className = `px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold ${curTheme.bgBadge} ${curTheme.textBadge} border ${curTheme.borderBadge} flex items-center gap-1.5 shadow-sm`;
+      }
+      const pingDot = document.getElementById('connector-ping-dot');
+      if (pingDot) {
+        pingDot.className = `w-1.5 h-1.5 rounded-full ${curTheme.pingClass} animate-ping`;
+      }
+      const cardLabelEl = document.getElementById('connector-card-label');
+      if (cardLabelEl) {
+        cardLabelEl.innerText = curTheme.label;
+      }
+      const titleIconEl = document.getElementById('scenario-title-icon');
+      if (titleIconEl) titleIconEl.innerText = curTheme.icon;
+
+      const reopenBtn = document.getElementById('reopen-custom-btn');
+      if (reopenBtn) reopenBtn.classList.remove('hidden');
+
+      resetGame();
+      switchSubTab('scenario');
+    }
+
+    function resetGame() {
+      currentTurn = 1;
+      lastDoctrineKey = null;
+      stanceConsecutiveCount = 1;
+
+      if (currentScenarioIndex === 3 && !scenarios[3]) {
+        loadCustomPreset(1);
+        applyCustomScenario();
+        return;
+      }
+
+      const s = scenarios[currentScenarioIndex];
+      escalation = s.initialEscalation;
+      security = 60;
+      economy = 65;
+      alliance = 70;
+      logs = [];
+
+      // Update scenario UI
+      const titleTextEl = document.getElementById('scenario-title-text');
+      // Update Table Center Scenario Title
+      const tblScenTitle = document.getElementById('table-scenario-title');
+      if (tblScenTitle && s) {
+        tblScenTitle.innerText = s.title;
+      }
+
+      if (titleTextEl) {
+        titleTextEl.innerText = s.title;
+      } else {
+        const titleEl = document.getElementById('scenario-title');
+        if (titleEl) titleEl.innerText = s.title;
+      }
+      const descEl = document.getElementById('scenario-desc');
+      if (descEl) descEl.innerText = s.desc;
+      
+      const tagEl = document.getElementById('scenario-status-tag');
+      if (tagEl) {
+        tagEl.innerText = (escalation >= 70) ? "🚨 위기 1급 경보" : (escalation >= 60) ? "⚠️ 위기 2급 경보" : "ℹ️ 위기 3급 경보";
+      }
+      const escDisp = document.getElementById('scenario-esc-disp');
+      if (escDisp) escDisp.innerText = escalation + '%';
+
+      // Reset Table center and seat quotes
+      const tblEsc = document.getElementById('table-escalation-text');
+      const defconNum = (escalation >= 80) ? 1 : (escalation >= 60) ? 2 : (escalation >= 40) ? 3 : 4;
+      if (tblEsc) tblEsc.innerText = `DEFCON ${defconNum} · ${escalation}%`;
+
+      const tblRnd = document.getElementById('table-round-badge');
+      if (tblRnd) tblRnd.innerText = `ROUND 1 / 3`;
+
+      const quoteKr = document.getElementById('table-quote-kr');
+      if (quoteKr) quoteKr.innerText = '"' + countryProfiles.kr.quote + '"';
+      const quoteUs = document.getElementById('table-quote-us');
+      if (quoteUs) quoteUs.innerText = '"' + countryProfiles.us.quote + '"';
+      const quoteCn = document.getElementById('table-quote-cn');
+      if (quoteCn) quoteCn.innerText = '"' + countryProfiles.cn.quote + '"';
+      const quoteRu = document.getElementById('table-quote-ru');
+      if (quoteRu) quoteRu.innerText = '"' + countryProfiles.ru.quote + '"';
+
+      const decisionBox = document.getElementById('decision-box');
+      if (decisionBox) decisionBox.classList.remove('hidden');
+      const endingCard = document.getElementById('ending-card');
+      if (endingCard) endingCard.classList.add('hidden');
+      const reopenEndingBtn = document.getElementById('reopen-ending-btn');
+      if (reopenEndingBtn) reopenEndingBtn.classList.add('hidden');
+      if (endingCard) endingCard.classList.add('hidden');
+
+      const docLabel = document.getElementById('current-doctrine-label');
+      if (docLabel) docLabel.innerText = "대기 중";
+      const intenLabel = document.getElementById('intensity-level-label');
+      if (intenLabel) intenLabel.innerText = "1차 반응";
+
+      inspectCountry(currentInspectedCountry);
+      renderOptions();
+      renderTelemetry();
+      renderLogs();
+    }
+
+    function renderOptions() {
+      const s = scenarios[currentScenarioIndex];
+      const container = document.getElementById('options-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const stepBadge = document.getElementById('decision-turn-badge');
+      const stepText = document.getElementById('decision-turn-step-text');
+      const stepPing = document.getElementById('decision-turn-ping-dot');
+      const subGuide = document.getElementById('decision-sub-guide');
+      const stepTracker = document.getElementById('decision-step-tracker');
+
+      const stepMeta = {
+        1: {
+          badge: "bg-blue-950/80 text-blue-200 border-blue-700",
+          ping: "bg-blue-500",
+          text: "ROUND 1 · 초동 결단",
+          guide: "초동 위기 대응"
+        },
+        2: {
+          badge: "bg-amber-950/80 text-amber-200 border-amber-700",
+          ping: "bg-amber-500",
+          text: "ROUND 2 · 상황 맞대응",
+          guide: "3대 강국 반응 맞대응"
+        },
+        3: {
+          badge: "bg-purple-950/80 text-purple-200 border-purple-700",
+          ping: "bg-purple-500",
+          text: "ROUND 3 · 최종 담판/결전",
+          guide: "국가 운명 최종 결단"
+        }
+      };
+
+      const curStep = stepMeta[currentTurn] || stepMeta[1];
+      if (stepBadge) stepBadge.className = `px-2 py-0.2 rounded-full text-[10px] font-bold font-mono ${curStep.badge} border flex items-center gap-1`;
+      if (stepPing) stepPing.className = `w-1.5 h-1.5 rounded-full ${curStep.ping} animate-pulse`;
+      if (stepText) stepText.innerText = curStep.text;
+      if (subGuide) subGuide.innerText = curStep.guide;
+
+      // Sleek 3-Phase Step Inline Tracker (Zero Vertical Clutter)
+      if (stepTracker) {
+        stepTracker.innerHTML = [1, 2, 3].map(stepNum => {
+          if (stepNum < currentTurn) {
+            return `
+              <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-bold border border-slate-700 flex items-center gap-1">
+                <span>✓</span> ${stepNum}단계
+              </span>
+            `;
+          } else if (stepNum === currentTurn) {
+            const activeColor = (currentTurn === 1) 
+              ? 'bg-blue-600 text-white border-blue-400 ring-1 ring-blue-400/50'
+              : (currentTurn === 2)
+              ? 'bg-amber-600 text-white border-amber-400 ring-1 ring-amber-400/50'
+              : 'bg-purple-600 text-white border-purple-400 ring-1 ring-purple-400/50';
+            const stepLabel = (stepNum === 1) ? '1단계 초동' : (stepNum === 2) ? '2단계 맞대응' : '3단계 담판';
+            return `
+              <span class="px-2 py-0.5 rounded ${activeColor} font-extrabold shadow-xs flex items-center gap-1 animate-pulse">
+                <span>🎯</span> ${stepLabel}
+              </span>
+            `;
+          } else {
+            const stepLabel = (stepNum === 2) ? '2단계' : '3단계';
+            return `
+              <span class="px-1.5 py-0.5 rounded bg-slate-900/60 text-slate-500 font-medium border border-slate-800">
+                ${stepLabel} 대기
+              </span>
+            `;
+          }
+        }).join('<span class="text-slate-600 text-[9px]">➔</span>');
+      }
+
+      // Compact Tactical 1-Line Bulletin Strip (~22px)
+      const intelBox = document.getElementById('round-intel-brief');
+      if (intelBox) {
+        if (currentTurn === 1 || logs.length === 0) {
+          intelBox.className = "px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 shadow-xs shrink-0 flex items-center justify-between text-[10px]";
+          intelBox.innerHTML = `
+            <div class="flex items-center gap-1.5 font-medium truncate text-slate-300">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shrink-0"></span>
+              <span class="text-blue-300 font-bold shrink-0">정세 요약:</span>
+              <span class="truncate">주변 강국 비상 대치 돌입 · 국가 안보를 위한 초동 대응 방침을 결단하십시오.</span>
+            </div>
+            <span class="text-[9px] px-1.5 py-0.2 rounded bg-blue-950 text-blue-300 border border-blue-800 font-mono font-bold shrink-0 ml-2">ROUND 1</span>
+          `;
+        } else {
+          const prev = logs[0];
+          intelBox.className = "px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 shadow-xs shrink-0 flex items-center justify-between text-[10px]";
+          intelBox.innerHTML = `
+            <div class="flex items-center gap-2 truncate text-slate-300 font-medium">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping shrink-0"></span>
+              
+              <span class="truncate text-slate-200">🇺🇸 ${prev.trump.action} · 🇨🇳 ${prev.xi.action} · 🇷🇺 ${prev.putin.action}</span>
+            </div>
+            <span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-800 font-mono font-bold shrink-0 ml-2">R${currentTurn} 맞대응</span>
+          `;
+        }
+      }
+
+      // HIGH VISIBILITY & ESSENTIAL INFORMATION ONLY DECISION CARDS
+      s.options.forEach((opt, idx) => {
+        const roundData = (opt.rounds && opt.rounds[currentTurn]) ? opt.rounds[currentTurn] : { title: opt.title, desc: opt.desc };
+        const optTitle = roundData.title;
+        const optDesc = roundData.desc;
+        const isRoundAdapted = (currentTurn > 1 && opt.rounds && opt.rounds[currentTurn]);
+
+        // Distinct styling per doctrine / option index
+        const cardThemes = [
+          {
+            border: 'border-blue-500/50 hover:border-blue-400 hover:shadow-[0_0_18px_rgba(59,130,246,0.35)]',
+            numBg: 'bg-blue-500/20 text-blue-300 border border-blue-500/40',
+            doctrineBadge: 'bg-blue-950/80 text-blue-300 border-blue-700/60',
+            btnBg: 'bg-blue-600 group-hover:bg-blue-500 text-white shadow-blue-900/30'
+          },
+          {
+            border: 'border-emerald-500/50 hover:border-emerald-400 hover:shadow-[0_0_18px_rgba(16,185,129,0.35)]',
+            numBg: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40',
+            doctrineBadge: 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60',
+            btnBg: 'bg-emerald-600 group-hover:bg-emerald-500 text-white shadow-emerald-900/30'
+          },
+          {
+            border: 'border-purple-500/50 hover:border-purple-400 hover:shadow-[0_0_18px_rgba(168,85,247,0.35)]',
+            numBg: 'bg-purple-500/20 text-purple-300 border border-purple-500/40',
+            doctrineBadge: 'bg-purple-950/80 text-purple-300 border-purple-700/60',
+            btnBg: 'bg-purple-600 group-hover:bg-purple-500 text-white shadow-purple-900/30'
+          }
+        ];
+        const theme = cardThemes[idx % cardThemes.length];
+
+        const btn = document.createElement('button');
+        btn.onclick = () => openConfirmDialog(idx);
+        btn.className = `text-left p-2.5 md:p-3 rounded-xl border ${theme.border} bg-slate-900/95 hover:bg-slate-850 transition-all group shadow-sm flex flex-col justify-between cursor-pointer h-full min-h-full w-full self-stretch`;
+        btn.innerHTML = `
+          <!-- Card Header & Core Action (Equal Height Aligned) -->
+          <div class="space-y-1 flex-1 min-h-0 flex flex-col justify-start">
+            <!-- Top Doctrine & Round Indicator -->
+            <div class="flex items-center justify-between gap-1 shrink-0 h-5">
+              <div class="flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full ${theme.numBg} flex items-center justify-center text-[11px] font-mono font-bold shrink-0">${idx + 1}</span>
+                <span class="text-[9px] px-2 py-0.2 rounded-full ${theme.doctrineBadge} font-bold font-mono border truncate">${opt.doctrine}</span>
+              </div>
+              ${isRoundAdapted ? `<span class="text-[8px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 font-bold border border-amber-700 shrink-0">R${currentTurn} 맞춤</span>` : ''}
+            </div>
+
+            <!-- Action Title (Locked Height: Exactly 34px across all 3 cards) -->
+            <h4 class="font-extrabold text-xs md:text-[13px] text-white group-hover:text-blue-200 leading-snug line-clamp-2 h-[34px] flex items-center pt-0.5 shrink-0">
+              ${optTitle}
+            </h4>
+
+            <!-- Core Action Summary (Locked Height: Exactly 32px across all 3 cards) -->
+            <div class="text-[11px] text-slate-300 leading-snug font-medium line-clamp-2 h-[32px] flex items-start gap-1 overflow-hidden shrink-0">
+              <span class="text-cyan-400 font-bold mt-0.5 shrink-0">•</span>
+              <span class="line-clamp-2">${optDesc}</span>
+            </div>
+          </div>
+
+          <!-- Bottom: Projected Impacts & Action Button (Strictly Equal Vertical Alignment) -->
+          <div class="pt-2 border-t border-slate-800 space-y-1.5 shrink-0 mt-1">
+            <!-- 3 Core Impact Indicators (Locked Height: 34px) -->
+            <div class="grid grid-cols-3 gap-1 text-[10px] font-mono text-center h-[34px]">
+              <div class="px-1 py-0.5 rounded bg-slate-950/80 border border-slate-800 ${opt.escDelta >= 0 ? 'text-rose-400' : 'text-emerald-400'} flex flex-col justify-center">
+                <span class="text-[8px] text-slate-400 block leading-none">확전</span>
+                <span class="font-bold leading-none mt-0.5">${opt.escDelta >= 0 ? '+' + opt.escDelta : opt.escDelta}%</span>
+              </div>
+              <div class="px-1 py-0.5 rounded bg-slate-950/80 border border-slate-800 ${opt.secDelta >= 0 ? 'text-blue-400' : 'text-amber-400'} flex flex-col justify-center">
+                <span class="text-[8px] text-slate-400 block leading-none">안보</span>
+                <span class="font-bold leading-none mt-0.5">${opt.secDelta >= 0 ? '+' + opt.secDelta : opt.secDelta}</span>
+              </div>
+              <div class="px-1 py-0.5 rounded bg-slate-950/80 border border-slate-800 ${opt.econDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'} flex flex-col justify-center">
+                <span class="text-[8px] text-slate-400 block leading-none">경제</span>
+                <span class="font-bold leading-none mt-0.5">${opt.econDelta >= 0 ? '+' + opt.econDelta : opt.econDelta}</span>
+              </div>
+            </div>
+
+            <!-- Execution Button (Locked Height: 28px) -->
+            <div class="w-full h-7 rounded-lg ${theme.btnBg} text-[11px] font-extrabold transition-all shadow-md flex items-center justify-center gap-1.5 shrink-0">
+              <span>결단 실행</span> <span>👉</span>
+            </div>
+          </div>
+        `;
+        container.appendChild(btn);
+      });
+
+      const roundInd = document.getElementById('round-indicator');
+      if (roundInd) {
+        roundInd.innerHTML = `
+          <span class="w-1.5 h-1.5 rounded-full ${escalation >= 75 ? 'bg-red-500 animate-ping' : 'bg-emerald-500'}"></span>
+          <span>ROUND ${currentTurn} / ${maxTurns}</span>
+        `;
+      }
+    }
+
+    
+    // Confirm Dialog Logic
+    let pendingChoiceIndex = null;
+
+    function openConfirmDialog(optIndex) {
+      const s = scenarios[currentScenarioIndex];
+      const opt = s.options[optIndex];
+      if (!opt) return;
+
+      pendingChoiceIndex = optIndex;
+      const roundData = (opt.rounds && opt.rounds[currentTurn]) ? opt.rounds[currentTurn] : { title: opt.title, desc: opt.desc };
+
+      const stepText = (currentTurn === 1) ? '제 1단계 · 초동 결단' : (currentTurn === 2) ? '제 2단계 · 상황 맞대응' : '제 3단계 · 최종 담판';
+      document.getElementById('confirm-modal-step').innerText = stepText;
+      document.getElementById('confirm-modal-doctrine').innerText = opt.doctrine;
+      document.getElementById('confirm-modal-title').innerText = roundData.title;
+      document.getElementById('confirm-modal-desc-text').innerText = roundData.desc;
+
+      const impactsBox = document.getElementById('confirm-modal-impacts');
+      if (impactsBox) {
+        impactsBox.innerHTML = `
+          <div class="px-2 py-1 rounded-lg bg-slate-950 border border-slate-800 ${opt.escDelta >= 0 ? 'text-rose-400' : 'text-emerald-400'}">
+            <span class="text-[9px] text-slate-400 block">확전 위험</span>
+            <span class="font-bold text-sm">${opt.escDelta >= 0 ? '+' + opt.escDelta : opt.escDelta}%</span>
+          </div>
+          <div class="px-2 py-1 rounded-lg bg-slate-950 border border-slate-800 ${opt.secDelta >= 0 ? 'text-blue-400' : 'text-amber-400'}">
+            <span class="text-[9px] text-slate-400 block">안보 지수</span>
+            <span class="font-bold text-sm">${opt.secDelta >= 0 ? '+' + opt.secDelta : opt.secDelta}</span>
+          </div>
+          <div class="px-2 py-1 rounded-lg bg-slate-950 border border-slate-800 ${opt.econDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+            <span class="text-[9px] text-slate-400 block">경제 지수</span>
+            <span class="font-bold text-sm">${opt.econDelta >= 0 ? '+' + opt.econDelta : opt.econDelta}</span>
+          </div>
+        `;
+      }
+
+      const modal = document.getElementById('confirm-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeConfirmDialog() {
+      pendingChoiceIndex = null;
+      const modal = document.getElementById('confirm-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function executeConfirmedChoice() {
+      if (pendingChoiceIndex !== null && pendingChoiceIndex !== undefined) {
+        const choice = pendingChoiceIndex;
+        closeConfirmDialog();
+        makeChoice(choice);
+      }
+    }
+
+    // Close on Escape or click outside
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeConfirmDialog();
+    });
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('confirm-modal');
+      if (modal && e.target === modal) {
+        closeConfirmDialog();
+      }
+    });
+
+    function makeChoice(optIndex) {
+      const s = scenarios[currentScenarioIndex];
+      const opt = s.options[optIndex];
+
+      const roundData = (opt.rounds && opt.rounds[currentTurn]) ? opt.rounds[currentTurn] : { title: opt.title, desc: opt.desc };
+      const activeTitle = roundData.title;
+
+      // Track Stance Continuity
+      if (lastDoctrineKey === opt.doctrineKey) {
+        stanceConsecutiveCount++;
+      } else {
+        stanceConsecutiveCount = 1;
+      }
+      lastDoctrineKey = opt.doctrineKey;
+
+      let tierKey = "t1";
+      let intensityText = "1차 반응 (기본)";
+
+      if (currentTurn >= 3 || escalation >= 80 || stanceConsecutiveCount >= 3) {
+        tierKey = "t3";
+        intensityText = "3차 반응 (최고 수위 통첩/비상 조치)";
+      } else if (currentTurn >= 2 || escalation >= 70 || stanceConsecutiveCount >= 2) {
+        tierKey = "t2";
+        intensityText = "2차 반응 (강화된 문구/실력 행사)";
+      }
+
+      const docLabel = document.getElementById('current-doctrine-label');
+      if (docLabel) docLabel.innerText = opt.doctrine;
+      const intenLabel = document.getElementById('intensity-level-label');
+      if (intenLabel) intenLabel.innerText = intensityText;
+
+      const activeResponses = opt.tiers[tierKey];
+
+      escalation = Math.max(5, Math.min(100, escalation + opt.escDelta));
+      security = Math.max(10, Math.min(95, security + opt.secDelta));
+      economy = Math.max(10, Math.min(95, economy + opt.econDelta));
+      alliance = Math.max(20, Math.min(98, alliance + opt.allDelta));
+
+      const logEntry = {
+        turn: currentTurn,
+        playerAction: activeTitle,
+        doctrine: opt.doctrine,
+        tierKey: tierKey,
+        intensityText: intensityText,
+        korea: {
+          statement: (opt.doctrineKey === "deterrence") 
+            ? "대한민국의 영토와 국민의 안전은 그 어떤 것과도 바꿀 수 없습니다. 단호한 연합 억제력으로 도발 원점을 철저히 분쇄하겠습니다."
+            : (opt.doctrineKey === "diplomacy")
+            ? "평화가 곧 밥이자 경제입니다. 긴장을 완화하고 다자 대화 테이블을 여는 실용적 타결에 모든 국력을 집중하겠습니다."
+            : "독자적인 자주국방 태세를 빈틈없이 유지하면서 상황을 냉철히 통제하고 확전을 철저히 차단하겠습니다.",
+          action: activeTitle,
+          esc: opt.escDelta
+        },
+        trump: activeResponses.trump,
+        xi: activeResponses.xi,
+        putin: activeResponses.putin,
+        escalationNow: escalation
+      };
+      logs.unshift(logEntry);
+
+      // Update Round Table seat quotes live!
+      const quoteKr = document.getElementById('table-quote-kr');
+      if (quoteKr) quoteKr.innerText = `"${logEntry.korea.statement}"`;
+      const quoteUs = document.getElementById('table-quote-us');
+      if (quoteUs) quoteUs.innerText = `"${logEntry.trump.text}"`;
+      const quoteCn = document.getElementById('table-quote-cn');
+      if (quoteCn) quoteCn.innerText = `"${logEntry.xi.text}"`;
+      const quoteRu = document.getElementById('table-quote-ru');
+      if (quoteRu) quoteRu.innerText = `"${logEntry.putin.text}"`;
+
+      const tblEsc = document.getElementById('table-escalation-text');
+      const defconNum = (escalation >= 80) ? 1 : (escalation >= 60) ? 2 : (escalation >= 40) ? 3 : 4;
+      if (tblEsc) tblEsc.innerText = `DEFCON ${defconNum} · ${escalation}%`;
+
+      currentTurn++;
+      const tblRnd = document.getElementById('table-round-badge');
+      if (tblRnd) tblRnd.innerText = `ROUND ${Math.min(currentTurn, maxTurns)} / ${maxTurns}`;
+
+      renderTelemetry();
+      renderLogs();
+
+      // Automatically switch sub screen to Telemetry & Log panel
+      switchSubTab('telemetry');
+
+      if (currentTurn > maxTurns || escalation >= 90 || escalation <= 25) {
+        showEnding();
+      } else {
+        renderOptions();
+      }
+    }
+
+    function renderTelemetry() {
+      const escBar = document.getElementById('escalation-bar');
+      const escVal = document.getElementById('escalation-val');
+      const escDot = document.getElementById('escalation-dot');
+      const escStatus = document.getElementById('escalation-status');
+
+      if (escVal) escVal.innerText = `${escalation}%`;
+      if (escBar) escBar.style.width = `${escalation}%`;
+
+      if (escalation >= 75) {
+        if (escBar) escBar.className = "bg-red-500 h-full transition-all duration-300";
+        if (escVal) escVal.className = "font-mono text-red-400 text-xs font-bold";
+        if (escDot) escDot.className = "w-2 h-2 rounded-full bg-red-500 animate-ping";
+        if (escStatus) escStatus.innerText = "🚨 전면 군사 충돌 임계점 근접! 최고 수위 통첩 발령";
+      } else if (escalation >= 50) {
+        if (escBar) escBar.className = "bg-amber-500 h-full transition-all duration-300";
+        if (escVal) escVal.className = "font-mono text-amber-400 text-xs font-bold";
+        if (escDot) escDot.className = "w-2 h-2 rounded-full bg-amber-500";
+        if (escStatus) escStatus.innerText = "⚠️ 각국 정상이 자국의 지렛대를 강화하며 팽팽한 힘겨루기 중";
+      } else {
+        if (escBar) escBar.className = "bg-emerald-500 h-full transition-all duration-300";
+        if (escVal) escVal.className = "font-mono text-emerald-400 text-xs font-bold";
+        if (escDot) escDot.className = "w-2 h-2 rounded-full bg-emerald-500";
+        if (escStatus) escStatus.innerText = "🕊️ 긴장이 완화되며 다자 정상 회담 및 평화 협상 국면";
+      }
+
+      const secVal = document.getElementById('security-val');
+      const secBar = document.getElementById('security-bar');
+      if (secVal) secVal.innerText = `${security}/100`;
+      if (secBar) secBar.style.width = `${security}%`;
+
+      const econVal = document.getElementById('economy-val');
+      const econBar = document.getElementById('economy-bar');
+      if (econVal) econVal.innerText = `${economy}/100`;
+      if (econBar) econBar.style.width = `${economy}%`;
+
+      const allVal = document.getElementById('alliance-val');
+      const allBar = document.getElementById('alliance-bar');
+      if (allVal) allVal.innerText = `${alliance}/100`;
+      if (allBar) allBar.style.width = `${alliance}%`;
+    }
+
+    function renderLogs() {
+      const container = document.getElementById('turn-logs');
+      if (!container) return;
+      const logCount = document.getElementById('log-count');
+      if (logCount) logCount.innerText = `${logs.length}라운드`;
+
+      if (logs.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 text-[11px] text-[var(--muted-foreground)]">
+            전략 결단을 내리면 대한민국과 3대 강국(미·중·러) 정상의 강화된 실시간 발언과 군사·외교 조치가 4국 일치 레이아웃으로 기록됩니다.
+          </div>
+        `;
+        return;
+      }
+
+      const roundLogThemes = {
+        1: {
+          containerClass: "p-2 rounded-xl border-2 border-blue-900/80 bg-blue-950/40 space-y-1.5 shadow-xs transition-all duration-300",
+          headerBorder: "border-blue-900/80",
+          badgeClass: "bg-blue-600 text-white font-bold px-2 py-0.2 rounded-full text-[10px] shadow-xs font-mono tracking-wider",
+          roundLabel: "ROUND 1"
+        },
+        2: {
+          containerClass: "p-2 rounded-xl border-2 border-amber-900/80 bg-amber-950/40 space-y-1.5 shadow-xs transition-all duration-300",
+          headerBorder: "border-amber-900/80",
+          badgeClass: "bg-amber-600 text-white font-bold px-2 py-0.2 rounded-full text-[10px] shadow-xs font-mono tracking-wider",
+          roundLabel: "ROUND 2"
+        },
+        3: {
+          containerClass: "p-2 rounded-xl border-2 border-purple-900/80 bg-purple-950/40 space-y-1.5 shadow-xs transition-all duration-300",
+          headerBorder: "border-purple-900/80",
+          badgeClass: "bg-purple-700 text-white font-bold px-2 py-0.2 rounded-full text-[10px] shadow-xs font-mono tracking-wider",
+          roundLabel: "ROUND 3"
+        }
+      };
+
+      container.innerHTML = '';
+      logs.forEach(log => {
+        const theme = roundLogThemes[log.turn] || roundLogThemes[((log.turn - 1) % 3) + 1];
+        const roundTitle = `ROUND ${log.turn}`;
+        const item = document.createElement('div');
+        item.className = theme.containerClass;
+        item.innerHTML = `
+          <div class="flex items-center justify-between border-b ${theme.headerBorder} pb-1 text-xs">
+            <span class="${theme.badgeClass}">
+              <span>${roundTitle}</span>
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
+            <!-- South Korea (Player) -->
+            <div class="p-1.5 rounded-lg bg-slate-950 border border-slate-800 border-l-2 border-l-indigo-500 space-y-0.5 shadow-xs">
+              <div class="flex items-center justify-between font-semibold">
+                <span class="flex items-center gap-1 text-slate-100 text-[10px]">
+                  <img src="assets/flag_kr.svg" class="w-4 h-2.5 object-cover rounded-2xs inline-block" alt="대한민국"> 이재명
+                </span>
+                <span class="text-[9px] text-indigo-400 font-mono font-bold">사령관</span>
+              </div>
+              <p class="text-slate-200 italic leading-snug text-[10px]">"${log.korea.statement}"</p>
+              <div class="pt-0.5 border-t border-slate-800/80 text-[9px] text-slate-400 flex items-center justify-between font-mono">
+                <span class="truncate max-w-[130px]">조치: ${log.korea.action}</span>
+                <span class="${log.korea.esc >= 0 ? 'text-red-400' : 'text-emerald-400'}">${log.korea.esc >= 0 ? '+' + log.korea.esc : log.korea.esc}%</span>
+              </div>
+            </div>
+
+            <!-- United States -->
+            <div class="p-1.5 rounded-lg bg-slate-950 border border-slate-800 border-l-2 border-l-blue-500 space-y-0.5 shadow-xs">
+              <div class="flex items-center justify-between font-semibold">
+                <span class="flex items-center gap-1 text-slate-100 text-[10px]">
+                  <img src="assets/flag_us.svg" class="w-4 h-2.5 object-cover rounded-2xs inline-block" alt="미국"> 트럼프
+                </span>
+                <span class="${log.trump.redline ? 'text-red-400 font-bold text-[8px]' : 'text-blue-400 text-[8px] font-mono font-bold'}">${log.trump.redline ? '🚨 레드라인' : '투사'}</span>
+              </div>
+              <p class="text-slate-200 italic leading-snug text-[10px]">"${log.trump.text}"</p>
+              <div class="pt-0.5 border-t border-slate-800/80 text-[9px] text-slate-400 flex items-center justify-between font-mono">
+                <span class="truncate max-w-[130px]">조치: ${log.trump.action}</span>
+                <span class="${log.trump.esc >= 0 ? 'text-red-400' : 'text-emerald-400'}">${log.trump.esc >= 0 ? '+' + log.trump.esc : log.trump.esc}%</span>
+              </div>
+            </div>
+
+            <!-- China -->
+            <div class="p-1.5 rounded-lg bg-slate-950 border border-slate-800 border-l-2 border-l-amber-500 space-y-0.5 shadow-xs">
+              <div class="flex items-center justify-between font-semibold">
+                <span class="flex items-center gap-1 text-slate-100 text-[10px]">
+                  <img src="assets/flag_cn.svg" class="w-4 h-2.5 object-cover rounded-2xs inline-block" alt="중국"> 시진핑
+                </span>
+                <span class="${log.xi.redline ? 'text-red-400 font-bold text-[8px]' : 'text-amber-400 text-[8px] font-mono font-bold'}">${log.xi.redline ? '🚨 침해' : '수호'}</span>
+              </div>
+              <p class="text-slate-200 italic leading-snug text-[10px]">"${log.xi.text}"</p>
+              <div class="pt-0.5 border-t border-slate-800/80 text-[9px] text-slate-400 flex items-center justify-between font-mono">
+                <span class="truncate max-w-[130px]">조치: ${log.xi.action}</span>
+                <span class="${log.xi.esc >= 0 ? 'text-red-400' : 'text-emerald-400'}">${log.xi.esc >= 0 ? '+' + log.xi.esc : log.xi.esc}%</span>
+              </div>
+            </div>
+
+            <!-- Russia -->
+            <div class="p-1.5 rounded-lg bg-slate-950 border border-slate-800 border-l-2 border-l-rose-500 space-y-0.5 shadow-xs">
+              <div class="flex items-center justify-between font-semibold">
+                <span class="flex items-center gap-1 text-slate-100 text-[10px]">
+                  <img src="assets/flag_ru.svg" class="w-4 h-2.5 object-cover rounded-2xs inline-block" alt="러시아"> 푸틴
+                </span>
+                <span class="${log.putin.redline ? 'text-red-400 font-bold text-[8px]' : 'text-rose-400 text-[8px] font-mono font-bold'}">${log.putin.redline ? '🚨 조약' : '억제'}</span>
+              </div>
+              <p class="text-slate-200 italic leading-snug text-[10px]">"${log.putin.text}"</p>
+              <div class="pt-0.5 border-t border-slate-800/80 text-[9px] text-slate-400 flex items-center justify-between font-mono">
+                <span class="truncate max-w-[130px]">조치: ${log.putin.action}</span>
+                <span class="${log.putin.esc >= 0 ? 'text-red-400' : 'text-emerald-400'}">${log.putin.esc >= 0 ? '+' + log.putin.esc : log.putin.esc}%</span>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function showEnding() {
+      const decisionBox = document.getElementById('decision-box');
+      if (decisionBox) decisionBox.classList.add('hidden');
+      const endingCard = document.getElementById('ending-card');
+      if (endingCard) endingCard.classList.remove('hidden');
+      const reopenBtn = document.getElementById('reopen-ending-btn');
+      if (reopenBtn) reopenBtn.classList.add('hidden');
+
+      let icon = "🛡️";
+      let title = "살얼음판 냉전적 현상 유지 · Cold Peace Deterrence";
+      let desc = "어느 진영도 결정적 승기를 잡지 못한 채, 팽팽한 군사적 억제력과 전략적 모호성이 충돌을 억눌렀습니다. 한반도는 긴장 속 균형 상태를 유지합니다.";
+
+      if (escalation >= 85) {
+        icon = "💥";
+        title = "국지전 폭발 및 군사적 파국 · Crisis Escalation";
+        desc = "상호 불신과 강경 군사 조치의 악순환 끝에 전략적 레드라인이 무너졌습니다. 한반도와 동북아 인접 해역에서 물리적 충돌이 발발하여 긴급 전시 체제에 돌입했습니다.";
+      } else if (escalation <= 35 && security >= 55) {
+        icon = "🕊️";
+        title = "4자 정상 간 '그랜드 빅딜' 극적 타결 · Grand Bargain";
+        desc = "치열한 대치 속에서 대한민국의 정교한 국익 실용외교가 결실을 맺었습니다. 한반도 비핵화와 평화 공존을 위한 역사적 4자 공동 선언이 성안되었습니다.";
+      } else if (economy <= 45) {
+        icon = "📉";
+        title = "관세·통상 보복 전면전 및 경제 블록화 · Economic Siege";
+        desc = "전면 군사 충돌은 면했으나, 트럼프의 관세 폭탄과 중·러의 자원 무기화가 맞부딪히며 대한민국 수출과 금융이 심각한 타격을 입었습니다.";
+      }
+
+      const iconEl = document.getElementById('ending-icon');
+      if (iconEl) iconEl.innerText = icon;
+      const titleEl = document.getElementById('ending-title');
+      if (titleEl) titleEl.innerText = title;
+      const descEl = document.getElementById('ending-desc');
+      if (descEl) descEl.innerText = desc;
+
+      // Update final metrics in ending overlay
+      const fEsc = document.getElementById('final-esc-val');
+      if (fEsc) fEsc.innerText = `${escalation}%`;
+      const fSec = document.getElementById('final-sec-val');
+      if (fSec) fSec.innerText = security;
+      const fEco = document.getElementById('final-eco-val');
+      if (fEco) fEco.innerText = economy;
+      const fAll = document.getElementById('final-all-val');
+      if (fAll) fAll.innerText = alliance;
+
+      // Dynamic glow bar and border styling according to outcome
+      const endingBox = document.getElementById('ending-inner-box');
+      const glowBar = document.getElementById('ending-glow-bar');
+      if (endingBox && glowBar) {
+        if (escalation >= 85) {
+          endingBox.className = "w-full max-w-xl bg-slate-900/95 border-2 border-rose-500/80 rounded-2xl p-4 sm:p-5 shadow-[0_0_50px_rgba(244,63,94,0.35)] relative overflow-hidden flex flex-col items-center gap-2.5";
+          glowBar.className = "absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-rose-500 to-orange-500";
+        } else if (escalation <= 35 && security >= 55) {
+          endingBox.className = "w-full max-w-xl bg-slate-900/95 border-2 border-emerald-500/80 rounded-2xl p-4 sm:p-5 shadow-[0_0_50px_rgba(16,185,129,0.35)] relative overflow-hidden flex flex-col items-center gap-2.5";
+          glowBar.className = "absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500";
+        } else if (economy <= 45) {
+          endingBox.className = "w-full max-w-xl bg-slate-900/95 border-2 border-amber-500/80 rounded-2xl p-4 sm:p-5 shadow-[0_0_50px_rgba(245,158,11,0.35)] relative overflow-hidden flex flex-col items-center gap-2.5";
+          glowBar.className = "absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500";
+        } else {
+          endingBox.className = "w-full max-w-xl bg-slate-900/95 border-2 border-blue-500/80 rounded-2xl p-4 sm:p-5 shadow-[0_0_50px_rgba(59,130,246,0.35)] relative overflow-hidden flex flex-col items-center gap-2.5";
+          glowBar.className = "absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500";
+        }
+      }
+
+      switchSubTab('telemetry');
+    }
+
+    function toggleEndingReview() {
+      const endingCard = document.getElementById('ending-card');
+      const reopenBtn = document.getElementById('reopen-ending-btn');
+      if (!endingCard) return;
+      if (endingCard.classList.contains('hidden')) {
+        endingCard.classList.remove('hidden');
+        if (reopenBtn) reopenBtn.classList.add('hidden');
+      } else {
+        endingCard.classList.add('hidden');
+        if (reopenBtn) reopenBtn.classList.remove('hidden');
+      }
+    }
+
+    window.onload = resetGame;
+  </script>
+
+  <!-- Tactical Command Confirmation Dialog Modal -->
+  <div id="confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden transition-opacity duration-200 p-4">
+    <div class="relative w-full max-w-md bg-slate-900 border-2 border-indigo-500/80 rounded-2xl shadow-[0_0_50px_rgba(99,102,241,0.35)] p-5 overflow-hidden text-left space-y-4">
+      
+      <!-- Top Ambient Glow Line -->
+      <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">⚠️</span>
+          <div>
+            <h3 class="font-extrabold text-sm text-white tracking-wide flex items-center gap-1.5">
+              국가 비상 결단 승인 확인
+            </h3>
+            <p class="text-[10px] text-slate-400 font-mono">COMMAND AUTHORIZATION CONFIRMATION</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeConfirmDialog()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer text-sm">✕</button>
+      </div>
+
+      <!-- Content Details -->
+      <div class="space-y-2.5">
+        <!-- Doctrine & Target Step -->
+        <div class="flex items-center justify-between">
+          <span id="confirm-modal-step" class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-blue-950 text-blue-300 border border-blue-700">제 1단계 초동 결단</span>
+          <span id="confirm-modal-doctrine" class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">한미동맹 억제</span>
+        </div>
+
+        <!-- Action Title -->
+        <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
+          <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">결단 조치 명칭</div>
+          <h4 id="confirm-modal-title" class="font-bold text-sm text-white leading-snug">
+            한미 연합 방위태세 격상 및 킬체인 가동
+          </h4>
+          <div id="confirm-modal-desc" class="text-xs text-slate-300 pt-1 flex items-start gap-1">
+            <span class="text-cyan-400 font-bold mt-0.5 shrink-0">•</span>
+            <span id="confirm-modal-desc-text">미 전략자산 전개 수용 · 도발 징후 시 원점 타격 선언</span>
+          </div>
+        </div>
+
+        <!-- Projected Impact Metrics -->
+        <div class="space-y-1">
+          <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">예상 국가 파급 지표</div>
+          <div id="confirm-modal-impacts" class="grid grid-cols-3 gap-1.5 text-center text-xs font-mono">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Prompt message -->
+        <p class="text-[11px] text-slate-300 text-center font-medium bg-slate-950/50 p-2 rounded-lg border border-slate-800/80">
+          위 전략을 대한민국 국가최고지도자로서 공식 승인하고<br><span class="text-indigo-300 font-bold">4개국 교차 작전을 즉각 발령</span>하시겠습니까?
+        </p>
+      </div>
+
+      <!-- Actions: Cancel vs Confirm -->
+      <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
+        <button type="button" id="confirm-modal-btn-cancel" onclick="closeConfirmDialog()" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors cursor-pointer text-center">
+          ✕ 취소 (재검토)
+        </button>
+        <button type="button" id="confirm-modal-btn-execute" onclick="executeConfirmedChoice()" class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-indigo-900/50 transition-all cursor-pointer text-center flex items-center justify-center gap-1.5">
+          <span>⚔️ 최종 결단 재가</span> <span>👉</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
