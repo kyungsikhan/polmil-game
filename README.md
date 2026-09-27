@@ -24,12 +24,12 @@
    git add .
    git commit -m "Deploy Pol-Mil Crisis Commander Arena"
    git branch -M main
-   git remote add origin https://github.com/kyungsikhan/polmil-wargame.git
+   git remote add origin https://github.com/kyungsikhan/polmil-game.git
    git push -u origin main
    ```
 3. GitHub 저장소의 **Settings -> Pages** 메뉴로 이동
 4. **Branch**를 `main` / `/(root)`로 지정하고 **Save** 클릭
-5. 1~2분 후 `https://kyungsikhan.github.io/polmil-wargame/` 주소로 전 세계 공개 배포 완료!
+5. 1~2분 후 `https://kyungsikhan.github.io/polmil-game/` 주소로 전 세계 공개 배포 완료!
 
 ### 3. Vercel 배포
 1. [https://vercel.com](https://vercel.com) 로그인
